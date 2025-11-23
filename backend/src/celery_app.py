@@ -1,68 +1,84 @@
-# Я пока что не знаю зачем это нужно - Вова
+import redis
+from celery import Celery, chain
+from celery.signals import task_prerun
+import requests
+import os
 
-from celery import Celery
-import time
-from config import REDIS_URL
+import config
+from src.wsmanager import manager
 
-redis_url = REDIS_URL # "redis://redis:6379/0"
+TASK_MESSAGES = {
+    "stt_task": "stt",
+    "rag_task": "rag",
+    "llm_task": "llm",
+    "upload_lecture_task": "saving",
+    "finish_task": "finish"
+}
+DEFAULT_MESSAGE = "unknown"
+
+r = redis.Redis(
+    host = config.REDIS_URL,
+    port = config.REDIS_PORT,
+    db = 0,
+    decode_responses = True
+)
 
 celery = Celery(
     "tasks",
-    broker=redis_url,
-    backend=redis_url
+    broker = config.REDIS_URL,
+    backend = config.REDIS_URL
 )
 
-# Очереди для разных типов задач
-celery.conf.task_routes = {
-    "stt_task": {"queue": "stt_queue"},
-    "rag_task": {"queue": "rag_queue"}, 
-    "llm_task": {"queue": "llm_queue"},
-}
-
-@celery.task(bind=True)
-def stt_task(self, audio_file_path, task_id):
-    self.update_state(
-        state='PROGRESS',
-        meta={'stage': 'stt', 'progress': 25, 'task_id': task_id}
-    )
+@celery.task()
+async def stt_task(payload: dict):
+    """
+    with open(payload["data"], "rb") as f:
+        response = requests.post(
+            config.STT_SERVICE_URL+"/transcribe",
+            headers = {"task_id": payload["task_id"]},
+            files = {f"audio": f},
+            timeout = 1800
+        )
     
-    # STT логика
-    text = transcribe_audio(audio_file_path)
+    os.remove(payload["data"])
+    response.raise_for_status()
 
     return {
-        'stage': 'stt_completed', 
-        'text': text,
-        'task_id': task_id
-    }
-
-@celery.task(bind=True)
-def rag_task(self, text, task_id):
-    self.update_state(
-        state='PROGRESS', 
-        meta={'stage': 'rag', 'progress': 50, 'task_id': task_id}
-    )
-    
-    # RAG логика
-    context = rag_search(text)
+        "task_id": payload["task_id"],
+        "data": response.json()["text"]
+    }"""
 
     return {
-        'stage': 'rag_completed',
-        'context': context,
-        'task_id': task_id
+        "task_id": payload["task_id"],
+        "data": "hello world"
     }
 
-@celery.task(bind=True) 
-def llm_task(self, text, task_id):
-    self.update_state(
-        state='PROGRESS', 
-        meta={'stage': 'rag', 'progress': 50, 'task_id': task_id}
-    )
-    
-    # RAG логика
-    context = rag_search(text)
-    
+@celery.task()
+async def upload_lecture_task(payload: dict):
     return {
-        'stage': 'rag_completed',
-        'context': context,
-        'task_id': task_id
+        "task_id": payload["task_id"],
+        "data": 0
     }
+
+@celery.task()
+async def finish_task(payload: dict):
+    manager.send_message(payload["task_id"], payload["data"])
+
+@task_prerun.connect
+def track_task(sender=None, task_id=None, retval=None, **kwargs):
+    print(f"idk {sender}")
+    status = TASK_MESSAGES.get(sender, DEFAULT_MESSAGE)
+    if (retval != None):
+        manager.send_message(retval["task_id"], status)
+    else:
+        print("[TRACK TASK]")
+
+def run_audio_pipeline(task_id, audio_file_path):
+    print("pre run")
+    initial_payload = {"task_id": task_id, "data": audio_file_path}
+    chain(
+        stt_task.s(initial_payload),
+        upload_lecture_task.s(),
+        finish_task.s()
+    ).apply_async()
+    print("vot run")

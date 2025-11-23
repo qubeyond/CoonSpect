@@ -31,6 +31,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - coonspect-net
 
   backend:
     build: ./backend/
@@ -39,6 +41,9 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg2://user:pwd1234@db:5432/coonspect
+      REDIS_URL: redis://redis:6379  # добавляем это
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       db:
         condition: service_healthy

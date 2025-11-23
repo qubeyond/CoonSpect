@@ -9,7 +9,6 @@ from src.schemas.lecture import LectureCreate, LectureRead, LectureStatus
 
 router = APIRouter(prefix="/api/lectures", tags=["lectures"])
 
-
 @router.post("/upload", response_model=LectureRead)
 async def upload_lecture(
     lecture_in: LectureCreate,
