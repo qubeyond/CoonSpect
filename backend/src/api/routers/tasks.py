@@ -3,7 +3,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from fastapi import UploadFile, File
 import redis
 import uuid
-import tempfile
+import json
 
 from src.wsmanager import manager
 from src import config
@@ -66,7 +66,7 @@ async def upload_audio(task_id: str, file: UploadFile = File(...)):
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
     print(f"[WS] Connected task {task_id}")
     await manager.connect(websocket, task_id)
-    await manager.send_message(task_id, "connected")
+    await manager.send_message(task_id, json.dumps({"status":"connected", "data":None}))
 
     try:
         while True:

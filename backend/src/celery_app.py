@@ -14,7 +14,10 @@ TASK_MESSAGES = {
     "src.celery_app.upload_lecture_task": "saving",
     "src.celery_app.finish_task": "finish"
 }
+ENDING_MESSAGE = "end"
 DEFAULT_MESSAGE = "unknown"
+
+TASK_FINISH = "src.celery_app.finish_task"
 
 r = RedisSync(
     host = "redis",
@@ -66,19 +69,19 @@ def finish_task(payload: dict):
     print("finish")
     r.publish("ws_events", json.dumps({
         "task_id": payload["task_id"],
-        "message": payload["data"]
+        "message": json.dumps({"status":ENDING_MESSAGE, "data":payload["data"]})
     }))
+    manager.disconnect(payload["task_id"])
 
 @task_prerun.connect
 def track_task(task_id=None, task=None, sender=None, **kwargs):
-    print(f"id {task_id}")
-    print(f"task {task}")
-    print(f"sender {sender}")
-    print(f"kwargs {kwargs}")
+    if (sender.name == TASK_FINISH):
+        return
+
     status = TASK_MESSAGES.get(sender.name, DEFAULT_MESSAGE)
     r.publish("ws_events", json.dumps({
         "task_id": kwargs["args"][0]["task_id"],
-        "message": status
+        "message": json.dumps({"status":status, "data":None})
     }))
 
 def run_audio_pipeline(task_id, audio_file_path):
@@ -96,7 +99,7 @@ async def ws_event_listener():
     pubsub = redis.pubsub()
     await pubsub.subscribe("ws_events")
     async for message in pubsub.listen():
-        print(f"📩 Redis received: {message}")  # ← увидите содержимое
+        print(f"📩 Redis received: {message}")
         if message["type"] == "message":
             data = json.loads(message["data"])
             print(f"📨 Forwarding to WS: {data}")
