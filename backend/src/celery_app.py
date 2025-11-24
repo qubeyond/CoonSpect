@@ -1,23 +1,23 @@
-import redis
+from redis.asyncio import Redis as RedisAsync
+from redis import Redis as RedisSync
 from celery import Celery, chain
 from celery.signals import task_prerun
-import requests
-import os
+import json
 
 import config
 from src.wsmanager import manager
 
 TASK_MESSAGES = {
-    "stt_task": "stt",
-    "rag_task": "rag",
-    "llm_task": "llm",
-    "upload_lecture_task": "saving",
-    "finish_task": "finish"
+    "src.celery_app.stt_task": "stt",
+    "src.celery_app.rag_task": "rag",
+    "src.celery_app.llm_task": "llm",
+    "src.celery_app.upload_lecture_task": "saving",
+    "src.celery_app.finish_task": "finish"
 }
 DEFAULT_MESSAGE = "unknown"
 
-r = redis.Redis(
-    host = config.REDIS_URL,
+r = RedisSync(
+    host = "redis",
     port = config.REDIS_PORT,
     db = 0,
     decode_responses = True
@@ -30,7 +30,7 @@ celery = Celery(
 )
 
 @celery.task()
-async def stt_task(payload: dict):
+def stt_task(payload: dict):
     """
     with open(payload["data"], "rb") as f:
         response = requests.post(
@@ -47,31 +47,39 @@ async def stt_task(payload: dict):
         "task_id": payload["task_id"],
         "data": response.json()["text"]
     }"""
-
+    print("stt")
     return {
         "task_id": payload["task_id"],
         "data": "hello world"
     }
 
 @celery.task()
-async def upload_lecture_task(payload: dict):
+def upload_lecture_task(payload: dict):
+    print("upload")
     return {
         "task_id": payload["task_id"],
         "data": 0
     }
 
 @celery.task()
-async def finish_task(payload: dict):
-    manager.send_message(payload["task_id"], payload["data"])
+def finish_task(payload: dict):
+    print("finish")
+    r.publish("ws_events", json.dumps({
+        "task_id": payload["task_id"],
+        "message": payload["data"]
+    }))
 
 @task_prerun.connect
-def track_task(sender=None, task_id=None, retval=None, **kwargs):
-    print(f"idk {sender}")
-    status = TASK_MESSAGES.get(sender, DEFAULT_MESSAGE)
-    if (retval != None):
-        manager.send_message(retval["task_id"], status)
-    else:
-        print("[TRACK TASK]")
+def track_task(task_id=None, task=None, sender=None, **kwargs):
+    print(f"id {task_id}")
+    print(f"task {task}")
+    print(f"sender {sender}")
+    print(f"kwargs {kwargs}")
+    status = TASK_MESSAGES.get(sender.name, DEFAULT_MESSAGE)
+    r.publish("ws_events", json.dumps({
+        "task_id": kwargs["args"][0]["task_id"],
+        "message": status
+    }))
 
 def run_audio_pipeline(task_id, audio_file_path):
     print("pre run")
@@ -82,3 +90,14 @@ def run_audio_pipeline(task_id, audio_file_path):
         finish_task.s()
     ).apply_async()
     print("vot run")
+
+async def ws_event_listener():
+    redis = RedisAsync(host="redis", port=config.REDIS_PORT, db=0, decode_responses=True)
+    pubsub = redis.pubsub()
+    await pubsub.subscribe("ws_events")
+    async for message in pubsub.listen():
+        print(f"📩 Redis received: {message}")  # ← увидите содержимое
+        if message["type"] == "message":
+            data = json.loads(message["data"])
+            print(f"📨 Forwarding to WS: {data}")
+            await manager.send_message(data["task_id"], data["message"])
