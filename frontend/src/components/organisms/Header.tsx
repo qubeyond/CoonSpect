@@ -25,6 +25,19 @@ const Header: React.FC = () => {
   }, []);
 
   const scrollTo = (id: string) => {
+    if (id === "hero") {
+      // Scroll to top of the page for Главная button
+      if (location.pathname !== "/upload") {
+        navigate("/");
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 100);
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      setMenuOpen(false);
+      return;
+    }
     if (location.pathname !== "/upload") {
       navigate("/");
       setTimeout(() => {

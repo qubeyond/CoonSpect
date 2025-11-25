@@ -1,0 +1,14 @@
+:root {
+  /* Dark theme colors */
+  --color-dark-100: #1E1F3A;
+  --color-dark-200: #16182D;
+  --color-dark-300: #10112A;
+  --color-dark-400: #0B0C1C;
+
+  /* Other colors */
+  --color-gray-888: #888;
+
+  /* Drop shadow colors */
+  --color-drop-shadow-primary: #646cffaa;
+  --color-drop-shadow-react: #61dafbaa;
+}

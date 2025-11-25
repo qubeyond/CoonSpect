@@ -5,10 +5,11 @@ import Icon from "../atoms/Icon";
 interface EditorToolbarProps {
     onFormat: (type: 'bold' | 'italic' | 'list' | 'heading' | 'quote' | 'link') => void;
     onSave?: () => void;
+    onCopy?: () => void;
     onEdit?: () => void;
 }
 
-const EditorToolbar: React.FC<EditorToolbarProps> = ({ onFormat, onSave, onEdit }) => (
+const EditorToolbar: React.FC<EditorToolbarProps> = ({ onFormat, onSave, onCopy, onEdit }) => (
     
     <div className="flex items-center justify-between gap-4 mb-6 p-4 bg-[#1E1F3A] rounded-lg">
 
@@ -68,11 +69,18 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ onFormat, onSave, onEdit 
             </Button>
         </div>
 
-        {onSave && (
-            <Button onClick={onSave} variant="primary" size="sm">
-                <Icon name="Save" className="w-4 h-4 mr-1" />
-            </Button>
-        )}
+        <div className="flex items-center gap-1">
+            {onCopy && (
+                <Button onClick={onCopy} variant="primary" size="sm">
+                    <Icon name="Copy" className="w-4 h-4" />
+                </Button>
+            )}
+            {onSave && (
+                <Button onClick={onSave} variant="primary" size="sm">
+                    <Icon name="Save" className="w-4 h-4" />
+                </Button>
+            )}
+        </div>
     </div>
 );
 

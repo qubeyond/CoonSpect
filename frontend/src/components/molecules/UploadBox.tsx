@@ -25,6 +25,14 @@ function UploadBox({ onFileSelect }: UploadBoxProps) {
 
     const handleFile = async (file: File) => {
         if (file && file.type.startsWith('audio/')) {
+            const maxSize = 50 * 1024 * 1024;
+        
+            if (file.size > maxSize) {
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                alert(`Файл слишком большой: ${fileSizeMB} МБ. Максимальный размер: 50 МБ.`);
+                return;
+            }
+
             setFileName(file.name);
             setAudioFile(file);
             onFileSelect(file);
