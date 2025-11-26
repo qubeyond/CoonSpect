@@ -11,9 +11,9 @@ class Lecture(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     audio_url = Column(String, nullable=False)    # s3 url или локальный путь
     text_url = Column(String, nullable=True)      # путь к .md/.txt
+    segments_url = Column(String, nullable=True)  # путь к JSON файлу таймкодов
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    status = Column(String, default="pending")   # pending  # depricated
-    task_id = Column(String, nullable=True)                 # depricated
+    
 
     user = relationship("User", backref="lectures")
