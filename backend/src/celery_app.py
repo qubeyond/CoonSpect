@@ -2,7 +2,14 @@ from redis.asyncio import Redis as RedisAsync
 from redis import Redis as RedisSync
 from celery import Celery, chain
 from celery.signals import task_prerun
+from src.db.session import SessionLocal
 import json
+import os
+import requests
+from src.db.models.lecture import Lecture
+from pathlib import Path
+import uuid
+from src.db.models.user import User
 
 import config
 from src.wsmanager import manager
@@ -34,39 +41,61 @@ celery = Celery(
 
 @celery.task()
 def stt_task(payload: dict):
-    """
-    with open(payload["data"], "rb") as f:
+    """with open(payload["audio_filepath"], "rb") as audiof:
         response = requests.post(
             config.STT_SERVICE_URL+"/transcribe",
             headers = {"task_id": payload["task_id"]},
-            files = {f"audio": f},
+            files = {f"audio": audiof},
             timeout = 1800
         )
     
-    os.remove(payload["data"])
+    #os.remove(payload["audio_filepath"])
     response.raise_for_status()
 
-    return {
-        "task_id": payload["task_id"],
-        "data": response.json()["text"]
-    }"""
-    print("stt")
-    return {
-        "task_id": payload["task_id"],
-        "data": "hello world"
-    }
+    payload["data"] = response.json()["text"]"""
+
+    payload["data"] = "demo lecture"
+    return payload
 
 @celery.task()
 def upload_lecture_task(payload: dict):
-    print("upload")
-    return {
-        "task_id": payload["task_id"],
-        "data": 0
-    }
+    with SessionLocal() as db:
+        # Создаём пользователя (заглушка убрать)
+        new_user = User(
+            username=str(uuid.uuid4()),
+            password_hash=str(uuid.uuid4()),
+            profile=str(uuid.uuid4()),       
+            settings=str(uuid.uuid4()),
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+
+        lecture = Lecture(
+            user_id=new_user.id,
+            audio_url=payload["audio_filepath"],
+            text_url="nourl",
+            status="pending"
+        )
+        db.add(lecture)
+        db.commit()
+        db.refresh(lecture)
+
+        text_path = Path(f"{lecture.id}.txt").resolve()
+        with open(text_path, "w") as f:
+            f.write(payload["data"])
+        
+        lecture.audio_url = str(text_path)
+        db.commit()
+
+        lecture_id = lecture.id
+        
+    payload["lecture_id"] = lecture_id
+    return payload
 
 @celery.task()
 def finish_task(payload: dict):
-    print("finish")
     r.publish("ws_events", json.dumps({
         "task_id": payload["task_id"],
         "message": json.dumps({"status":ENDING_MESSAGE, "data":payload["data"]})
@@ -85,14 +114,13 @@ def track_task(task_id=None, task=None, sender=None, **kwargs):
     }))
 
 def run_audio_pipeline(task_id, audio_file_path):
-    print("pre run")
-    initial_payload = {"task_id": task_id, "data": audio_file_path}
+    print("RUN AUDIO PIPELINE")
+    initial_payload = {"task_id": task_id, "data": None, "audio_filepath": audio_file_path}
     chain(
         stt_task.s(initial_payload),
         upload_lecture_task.s(),
         finish_task.s()
     ).apply_async()
-    print("vot run")
 
 async def ws_event_listener():
     redis = RedisAsync(host="redis", port=config.REDIS_PORT, db=0, decode_responses=True)

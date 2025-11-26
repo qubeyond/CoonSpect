@@ -4,6 +4,7 @@ from fastapi import UploadFile, File
 import redis
 import uuid
 import json
+import tempfile
 
 from src.wsmanager import manager
 from src import config
@@ -43,16 +44,13 @@ async def upload_audio(task_id: str, file: UploadFile = File(...)):
     
     tmp_path = None
     try:
-        """
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             content = await file.read()
             tmp.write(content)
             tmp_path = tmp.name
             
         print(f"[UPLOAD] Saved temp file {tmp_path} ({len(content)} bytes)")
-        """
 
-        tmp_path = "hello world"
         run_audio_pipeline(task_id, tmp_path)
 
         return {"status": "success"}

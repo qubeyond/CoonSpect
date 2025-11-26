@@ -19,6 +19,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - coonspect-net
 
   redis:
     image: redis:8.2.2

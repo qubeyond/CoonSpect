@@ -13,7 +13,7 @@ class Lecture(Base):
     text_url = Column(String, nullable=True)      # путь к .md/.txt
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    status = Column(String, default="pending")   # pending
-    task_id = Column(String, nullable=True)
+    status = Column(String, default="pending")   # pending  # depricated
+    task_id = Column(String, nullable=True)                 # depricated
 
     user = relationship("User", backref="lectures")

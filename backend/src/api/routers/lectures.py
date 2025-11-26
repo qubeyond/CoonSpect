@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.db.models.lecture import Lecture
 from src.db.models.user import User
-from src.celery_tasks.stt import transcribe_lecture  # Celery-задача STT
 from src.schemas.lecture import LectureCreate, LectureRead, LectureStatus
 
 router = APIRouter(prefix="/api/lectures", tags=["lectures"])
@@ -36,9 +35,7 @@ async def upload_lecture(
     db.add(lecture)
     db.commit()
     db.refresh(lecture)
-
-    # Запускаем задачу STT через Celery
-    task = transcribe_lecture.delay(str(lecture.id), source)
+    
     lecture.task_id = task.id
     db.commit()
 
