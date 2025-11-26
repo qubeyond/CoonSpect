@@ -71,7 +71,6 @@ def upload_lecture_task(payload: dict):
         db.commit()
         db.refresh(new_user)
 
-
         lecture = Lecture(
             user_id=new_user.id,
             audio_url=payload["audio_filepath"],
@@ -90,8 +89,8 @@ def upload_lecture_task(payload: dict):
         db.commit()
 
         lecture_id = lecture.id
-        
-    payload["lecture_id"] = lecture_id
+
+    payload["data"] = lecture_id
     return payload
 
 @celery.task()
