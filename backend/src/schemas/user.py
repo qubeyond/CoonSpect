@@ -11,6 +11,6 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: UUID
-
+    
     class Config:
         orm_mode = True

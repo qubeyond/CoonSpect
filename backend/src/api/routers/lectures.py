@@ -8,40 +8,6 @@ from src.schemas.lecture import LectureCreate, LectureRead, LectureStatus
 
 router = APIRouter(prefix="/api/lectures", tags=["lectures"])
 
-@router.post("/upload", response_model=LectureRead) # absolute useless method now
-async def upload_lecture(
-    lecture_in: LectureCreate,
-    db: Session = Depends(get_db),
-):
-    """
-    Создать новую лекцию и запустить задачу STT.
-    """
-    # Проверяем, существует ли пользователь
-    user = db.query(User).filter(User.id == lecture_in.user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Создаем запись лекции
-    source = lecture_in.s3_url or lecture_in.file_path
-    if not source:
-        raise HTTPException(status_code=400, detail="Provide file_path or s3_url")
-
-    lecture = Lecture(
-        user_id=user.id,
-        audio_url=source,
-        text_url=None,
-        status="pending"
-    )
-    db.add(lecture)
-    db.commit()
-    db.refresh(lecture)
-    
-    lecture.task_id = task.id
-    db.commit()
-
-    return lecture
-
-
 @router.get("/{lecture_id}/status", response_model=LectureStatus)
 def get_status(lecture_id: UUID, db: Session = Depends(get_db)):
     """

@@ -21,7 +21,7 @@ TASK_MESSAGES = {
     "src.celery_app.upload_lecture_task": "saving",
     "src.celery_app.finish_task": "finish"
 }
-ENDING_MESSAGE = "end"
+
 DEFAULT_MESSAGE = "unknown"
 
 TASK_FINISH = "src.celery_app.finish_task"
@@ -39,9 +39,36 @@ celery = Celery(
     backend = config.REDIS_URL
 )
 
-@celery.task()
-def stt_task(payload: dict):
-    """with open(payload["audio_filepath"], "rb") as audiof:
+class ChainException(Exception):
+    pass
+
+def send_msg(task_id: str, message: str = DEFAULT_MESSAGE):
+    """send task status with some data"""
+    r.publish("ws_events", json.dumps({
+            "task_id": task_id,
+            "message": message
+        }))
+
+def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
+    """exit from chain with error"""
+    r.publish("ws_events", json.dumps({
+            "task_id": task_id,
+            "message": message
+        }))
+
+    binding.retry(countdown=0, max_retries=0)
+
+    raise ChainException(message)
+    
+
+@celery.task(bind = True)
+def stt_task(self, payload: dict):
+    """
+    send audio file to stt service\n
+    payload need "task_id" and "audio_filepath"\n
+    writes "data" with stt response
+    """
+    with open(payload["audio_filepath"], "rb") as audiof:
         response = requests.post(
             config.STT_SERVICE_URL+"/transcribe",
             headers = {"task_id": payload["task_id"]},
@@ -49,30 +76,45 @@ def stt_task(payload: dict):
             timeout = 1800
         )
     
-    #os.remove(payload["audio_filepath"])
-    response.raise_for_status()
+    os.remove(payload["audio_filepath"])
+    if (response.status_code != 200):
+        exit_chain(self, payload["task_id"], f"Error with stt request, status {response.status_code}")
 
-    payload["data"] = response.json()["text"]"""
+    payload["data"] = response.json()["text"]
+    return payload
 
-    payload["data"] = "demo lecture"
+@celery.task(bind = True)
+def llm_task(self, payload: dict):
+    """
+    send audio file to stt service\n
+    payload need "task_id" and "data"\n
+    writes "data" with llm response
+    """
+
+    response = requests.post(
+        config.LLM_SERVICE_URL+"/summarize",
+        headers={"Content-Type": "text/plain"},
+        data=payload["data"],
+        timeout = 1800
+    )
+
+    if (response.status_code != 200):
+        exit_chain(self, payload["task_id"], f"Error with llm request, status {response.status_code}")
+
+    payload["data"] = response.json()["text"]
     return payload
 
 @celery.task()
 def upload_lecture_task(payload: dict):
-    with SessionLocal() as db:
-        # Создаём пользователя (заглушка убрать)
-        new_user = User(
-            username=str(uuid.uuid4()),
-            password_hash=str(uuid.uuid4()),
-            profile=str(uuid.uuid4()),       
-            settings=str(uuid.uuid4()),
-        )
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
+    """
+    add lecture to user\n
+    payload need "task_id", "user_uuid", "data"\n
+    writes "data" with lecture id
+    """
 
+    with SessionLocal() as db:
         lecture = Lecture(
-            user_id=new_user.id,
+            user_id=payload["user_uuid"],
             audio_url=payload["audio_filepath"],
             text_url="nourl",
             status="pending"
@@ -95,28 +137,39 @@ def upload_lecture_task(payload: dict):
 
 @celery.task()
 def finish_task(payload: dict):
-    r.publish("ws_events", json.dumps({
-        "task_id": payload["task_id"],
-        "message": json.dumps({"status":ENDING_MESSAGE, "data":payload["data"]})
-    }))
+    """
+    send payload["data"] as message in websocket and close connection\n
+    payload need "task_id", "data"
+    """
+    send_msg(payload["task_id"], payload["data"])
     manager.disconnect(payload["task_id"])
 
 @task_prerun.connect
 def track_task(task_id=None, task=None, sender=None, **kwargs):
-    if (sender.name == TASK_FINISH):
-        return
-
     status = TASK_MESSAGES.get(sender.name, DEFAULT_MESSAGE)
-    r.publish("ws_events", json.dumps({
-        "task_id": kwargs["args"][0]["task_id"],
-        "message": json.dumps({"status":status, "data":None})
-    }))
+    send_msg(kwargs["args"][0]["task_id"], status)
 
-def run_audio_pipeline(task_id, audio_file_path):
-    print("RUN AUDIO PIPELINE")
-    initial_payload = {"task_id": task_id, "data": None, "audio_filepath": audio_file_path}
+def run_audio_pipeline(task_id: str, user_uuid: uuid.UUID, audio_filepath: str):
+    if not manager.contains(task_id):
+        raise Exception(f"task_id {task_id} not found")
+    
+    with SessionLocal() as db:
+        db.query(User).filter()
+
+    if not os.path.exists(audio_filepath):
+        raise Exception(f"File {audio_filepath} not found")
+
+    print(f"[AUDIO PIPELINE] task_id: {task_id}; user_uuid {user_uuid}; audio_filepath {audio_filepath}")
+
+    initial_payload = {
+        "task_id": task_id,
+        "audio_filepath": audio_filepath,
+        "user_uuid": user_uuid
+    }
+
     chain(
         stt_task.s(initial_payload),
+        llm_task.s(),
         upload_lecture_task.s(),
         finish_task.s()
     ).apply_async()
@@ -126,8 +179,8 @@ async def ws_event_listener():
     pubsub = redis.pubsub()
     await pubsub.subscribe("ws_events")
     async for message in pubsub.listen():
-        print(f"📩 Redis received: {message}")
+        print(f"Redis received: {message}")
         if message["type"] == "message":
             data = json.loads(message["data"])
-            print(f"📨 Forwarding to WS: {data}")
+            print(f"Forwarding to WS: {data}")
             await manager.send_message(data["task_id"], data["message"])
