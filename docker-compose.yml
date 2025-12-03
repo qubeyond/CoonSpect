@@ -32,6 +32,26 @@ services:
       retries: 5
       start_period: 10s
 
+  stt-mock:
+    build: ./mock-stt/
+    container_name: coonspect-stt-mock
+    ports:
+      - "8002:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - coonspect-net
+  
+  llm-service:
+    build: ./llm-service/
+    container_name: coonspect-llm
+    ports:
+      - "8003:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - coonspect-net
+
   backend:
     build: ./backend/
     container_name: coonspect-backend
