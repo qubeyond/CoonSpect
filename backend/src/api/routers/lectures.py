@@ -4,27 +4,11 @@ from sqlalchemy.orm import Session
 from src.db.session import get_db
 from src.db.models.lecture import Lecture
 from src.db.models.user import User
-from src.schemas.lecture import LectureCreate, LectureRead, LectureStatus
+from src.schemas.lecture import LectureCreate, LectureRead
 
 router = APIRouter(prefix="/api/lectures", tags=["lectures"])
 
-@router.get("/{lecture_id}/status", response_model=LectureStatus)
-def get_status(lecture_id: UUID, db: Session = Depends(get_db)):
-    """
-    Проверить статус лекции.
-    """
-    lecture = db.query(Lecture).filter(Lecture.id == lecture_id).first()
-    if not lecture:
-        raise HTTPException(status_code=404, detail="Lecture not found")
-
-    return {
-        "lecture_id": str(lecture.id),
-        "status": lecture.status,
-        "task_id": lecture.task_id,
-    }
-
-
-@router.get("/{lecture_id}/result", response_model=LectureRead)
+@router.get("/{lecture_id}", response_model=LectureRead)
 def get_result(lecture_id: UUID, db: Session = Depends(get_db)):
     """
     Получить результат (ссылку на текстовый файл или готовый конспект).

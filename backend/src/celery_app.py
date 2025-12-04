@@ -45,16 +45,21 @@ class ChainException(Exception):
 def send_msg(task_id: str, message: str = DEFAULT_MESSAGE):
     """send task status with some data"""
     r.publish("ws_events", json.dumps({
-            "task_id": task_id,
-            "message": message
-        }))
+        "task_id": task_id,
+        "message": message
+    }))
 
 def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
     """exit from chain with error"""
     r.publish("ws_events", json.dumps({
-            "task_id": task_id,
-            "message": message
-        }))
+        "task_id": task_id,
+        "message": "error"
+    }))
+
+    r.publish("ws_events", json.dumps({
+        "task_id": task_id,
+        "message": message
+    }))
 
     binding.retry(countdown=0, max_retries=0)
 
