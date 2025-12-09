@@ -9,7 +9,7 @@ interface HowItWorksStepProps {
 
 const HowItWorksStep: React.FC<HowItWorksStepProps> = ({ icon, text }) => (
     <div className="flex flex-col items-center text-center max-w-[180px]">
-        <Icon name={icon} className="w-8 h-8 text-purple-400 mb-2" />
+        <Icon name={icon} className="w-8 h-8 text-purple-600 dark:text-purple-400 mb-2" />
         <Text>{text}</Text>
     </div>
 );

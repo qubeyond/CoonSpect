@@ -56,7 +56,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onRegister, isLoading = 
   };
 
   return (
-    <div className="bg-dark-100 p-6 rounded-lg border border-purple-500/20 max-w-md w-full">
+    <div className="bg-[var(--color-bg-primary)] p-6 rounded-lg border border-purple-500/20 max-w-md w-full">
       <Text size="lg" className="text-white font-semibold mb-4 text-center">
         {isRegister ? 'Регистрация' : 'Вход в систему'}
       </Text>
