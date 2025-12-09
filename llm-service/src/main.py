@@ -1,14 +1,17 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from ollama import LLMEngine
+from llm_engine import LLMEngine
 import uvicorn
 
 app = FastAPI()
 llm = LLMEngine()
 
+class TextRequest(BaseModel):
+    text: str
+
 @app.post("/summarize")
-async def summarize(request: str):
-    result = llm.summarize(request, "deepseek-r1:8b")
+async def summarize(request: TextRequest):
+    result = llm.summarize(request.text, "deepseek-r1:8b")
     
     if not result.get("success"):
         raise HTTPException(

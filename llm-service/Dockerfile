@@ -1,12 +1,14 @@
-FROM python:3.13-slim
+FROM ollama/ollama:latest
+
+RUN apt-get update && apt-get install -y python3 python3-pip
+RUN rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --break-system-packages --no-cache-dir -r requirements.txt
 
-COPY ./app ./app
+COPY src/ .
 
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT []
+CMD ["sh", "-c", "ollama serve & sleep 10 && ollama pull deepseek-r1:8b || true && exec uvicorn main:app --host 0.0.0.0 --port 8000"]
