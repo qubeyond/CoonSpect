@@ -17,15 +17,13 @@ def create_user(user_in: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.username == user_in.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
-
-    # hashed_password = hash(user_in.password)
+    
     hashed_password = pwd_context.hash(user_in.password)
 
     new_user = User(
         username=user_in.username,
         password_hash=hashed_password,
         profile=user_in.profile,
-        settings=user_in.settings
     )
 
     db.add(new_user)

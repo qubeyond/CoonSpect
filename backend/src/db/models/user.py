@@ -9,5 +9,3 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    profile = Column(String, nullable=True)
-    settings = Column(String, nullable=True)  # можно хранить JSON в будущем

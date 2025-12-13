@@ -60,7 +60,7 @@ def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
         "task_id": task_id,
         "message": message
     }))
-
+    
     binding.retry(countdown=0, max_retries=0)
 
     raise ChainException(message)
@@ -86,6 +86,18 @@ def stt_task(self, payload: dict):
         exit_chain(self, payload["task_id"], f"Error with stt request, status {response.status_code}")
 
     payload["data"] = response.json()["text"]
+
+    payload["data"] = "hello world"
+    return payload
+
+@celery.task(bind = True)
+def stt_task_test(self, payload: dict):
+    """
+    send audio file to stt service\n
+    payload need "task_id" and "audio_filepath"\n
+    writes "data" with stt response
+    """
+    payload["data"] = "hello world"
     return payload
 
 @celery.task(bind = True)
@@ -109,6 +121,15 @@ def llm_task(self, payload: dict):
     payload["data"] = response.json()["text"]
     return payload
 
+@celery.task(bind = True)
+def llm_task_test(self, payload: dict):
+    """
+    send audio file to stt service\n
+    payload need "task_id" and "data"\n
+    writes "data" with llm response
+    """
+    return payload
+
 @celery.task()
 def upload_lecture_task(payload: dict):
     """
@@ -122,7 +143,6 @@ def upload_lecture_task(payload: dict):
             user_id=payload["user_uuid"],
             audio_url=payload["audio_filepath"],
             text_url="nourl",
-            status="pending"
         )
         db.add(lecture)
         db.commit()
@@ -137,7 +157,7 @@ def upload_lecture_task(payload: dict):
 
         lecture_id = lecture.id
 
-    payload["data"] = lecture_id
+    payload["data"] = str(lecture_id)
     return payload
 
 @celery.task()
@@ -170,6 +190,39 @@ def run_audio_pipeline(task_id: str, user_uuid: uuid.UUID, audio_filepath: str):
         "task_id": task_id,
         "audio_filepath": audio_filepath,
         "user_uuid": user_uuid
+    }
+
+    chain(
+        stt_task.s(initial_payload),
+        llm_task.s(),
+        upload_lecture_task.s(),
+        finish_task.s()
+    ).apply_async()
+
+def run_audio_pipeline_test(task_id: str, audio_filepath: str):
+    if not manager.contains(task_id):
+        raise Exception(f"task_id {task_id} not found")
+    
+    user = User(
+        id = uuid.uuid4(),
+        username = uuid.uuid4(),
+        password_hash = uuid.uuid4()
+    )
+
+    with SessionLocal() as db:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    if not os.path.exists(audio_filepath):
+        raise Exception(f"File {audio_filepath} not found")
+
+    print(f"[AUDIO PIPELINE] task_id: {task_id}; user_uuid {user.id}; audio_filepath {audio_filepath}")
+
+    initial_payload = {
+        "task_id": task_id,
+        "audio_filepath": audio_filepath,
+        "user_uuid": user.id
     }
 
     chain(

@@ -6,3 +6,5 @@ redis
 aiohttp
 requests
 passlib[bcrypt]
+pytest
+passlib
