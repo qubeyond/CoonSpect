@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from uuid import UUID
 from sqlalchemy.orm import Session
-from src.db.session import get_db
-from src.db.models.lecture import Lecture
-from src.schemas.lecture import LectureRead
+from src.app.db.session import get_db
+from src.app.db.models.lecture import Lecture
+from src.app.api.schemas.lecture import LectureRead
 
 router = APIRouter(prefix="/api/lectures", tags=["lectures"])
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
 
@@ -18,5 +18,7 @@ class LectureRead(LectureBase):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="ignore"
+    )

@@ -1,10 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
-    profile: str | None = None
-    settings: str | None = None
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
@@ -12,5 +10,7 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: UUID
     
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        extra="ignore"
+    )

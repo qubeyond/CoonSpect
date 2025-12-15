@@ -2,17 +2,18 @@ from redis.asyncio import Redis as RedisAsync
 from redis import Redis as RedisSync
 from celery import Celery, chain
 from celery.signals import task_prerun
-from src.db.session import SessionLocal
+from src.app.db.session import SessionLocal
 import json
 import os
 import requests
-from src.db.models.lecture import Lecture
+from src.app.db.models.lecture import Lecture
 from pathlib import Path
 import uuid
-from src.db.models.user import User
+from src.app.db.models.user import User
 
-import config
-from src.wsmanager import manager
+import src.app.config as config
+from src.app.wsmanager import manager
+from src.app.db.redis import redis_sync, redis_async
 
 TASK_MESSAGES = {
     "src.celery_app.stt_task": "stt",
@@ -26,13 +27,6 @@ DEFAULT_MESSAGE = "unknown"
 
 TASK_FINISH = "src.celery_app.finish_task"
 
-r = RedisSync(
-    host = "redis",
-    port = config.REDIS_PORT,
-    db = 0,
-    decode_responses = True
-)
-
 celery = Celery(
     "tasks",
     broker = config.REDIS_URL,
@@ -44,19 +38,19 @@ class ChainException(Exception):
 
 def send_msg(task_id: str, message: str = DEFAULT_MESSAGE):
     """send task status with some data"""
-    r.publish("ws_events", json.dumps({
+    redis_sync.publish("ws_events", json.dumps({
         "task_id": task_id,
         "message": message
     }))
 
 def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
     """exit from chain with error"""
-    r.publish("ws_events", json.dumps({
+    redis_sync.publish("ws_events", json.dumps({
         "task_id": task_id,
         "message": "error"
     }))
 
-    r.publish("ws_events", json.dumps({
+    redis_sync.publish("ws_events", json.dumps({
         "task_id": task_id,
         "message": message
     }))
@@ -233,8 +227,7 @@ def run_audio_pipeline_test(task_id: str, audio_filepath: str):
     ).apply_async()
 
 async def ws_event_listener():
-    redis = RedisAsync(host="redis", port=config.REDIS_PORT, db=0, decode_responses=True)
-    pubsub = redis.pubsub()
+    pubsub = redis_async.pubsub()
     await pubsub.subscribe("ws_events")
     async for message in pubsub.listen():
         print(f"Redis received: {message}")

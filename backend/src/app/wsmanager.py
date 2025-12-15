@@ -13,7 +13,6 @@ class ConnectionManager:
             del self.active_connections[task_id]
 
     def contains(self, task_id: str) -> bool:
-        print(f"COMPATE {task_id}, {self.active_connections.keys()}")
         return self.active_connections.get(task_id) != None
     
     async def send_message(self, task_id: str, message: str):
