@@ -38,10 +38,10 @@ const UploadSection: React.FC<UploadSectionProps> = ({ onGenerate }) => {
 
   return (
     <div className="flex flex-col items-center justify-center gap-6">
-      <Heading level={1} className="text-4xl sm:text-5xl font-bold text-purple-400">
+      <Heading level={1} className="text-4xl sm:text-5xl font-bold text-[var(--color-text-purple)]">
         Преврати аудио в умный конспект
       </Heading>
-      <p className="text-text-secondary text-lg max-w-md">
+      <p className="text-[var(--color-text-secondary)] text-lg max-w-md">
         Просто перетащи сюда файл или выбери его, чтобы получить понятный конспект за пару секунд.
       </p>
       <UploadBox onFileSelect={() => {}} />

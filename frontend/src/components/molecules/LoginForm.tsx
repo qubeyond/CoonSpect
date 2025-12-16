@@ -56,8 +56,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onRegister, isLoading = 
   };
 
   return (
-    <div className="bg-[var(--color-bg-primary)] p-6 rounded-lg border border-purple-500/20 max-w-md w-full">
-      <Text size="lg" className="text-white font-semibold mb-4 text-center">
+    <div className="bg-bg-tertiary p-6 rounded-lg border border-border max-w-md w-full">
+      <Text size="lg" className="text-text-primary font-semibold mb-4 text-center">
         {isRegister ? 'Регистрация' : 'Вход в систему'}
       </Text>
       
@@ -95,7 +95,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onRegister, isLoading = 
       </form>
 
       <div className="mt-4 text-center">
-        <Text size="sm" className="text-gray-400">
+        <Text size="sm" className="text-text-secondary">
           {isRegister ? 'Уже есть аккаунт?' : 'Нет аккаунта?'}{' '}
           <button
             type="button"
@@ -104,7 +104,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onRegister, isLoading = 
               setIsRegister(newIsRegister);
               localStorage.setItem('isRegister', JSON.stringify(newIsRegister));
             }}
-            className="text-purple-400 hover:text-purple-300 underline"
+            className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 underline transition-colors"
           >
             {isRegister ? 'Войти' : 'Зарегистрироваться'}
           </button>

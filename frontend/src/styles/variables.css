@@ -1,31 +1,36 @@
 :root {
-  /* Default dark theme colors */
-  --color-bg-primary: #1E1F3A;
-  --color-bg-secondary: #16182D;
-  --color-bg-tertiary: #10112A;
-  --color-bg-accent: #0B0C1C;
-
-  /* Other colors */
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #888;
-  --color-gray-888: #888;
-
-  /* Drop shadow colors */
-  --color-drop-shadow-primary: #646cffaa;
-  --color-drop-shadow-react: #61dafbaa;
-}
-
-/* Light theme */
-:root[data-theme="light"] {
   --color-bg-primary: #F8F9FA;
   --color-bg-secondary: #E9ECEF;
   --color-bg-tertiary: #DEE2E6;
-  --color-bg-accent: #CED4DA;
+  --color-bg-accent: #FFFFFF; 
 
-  --color-text-primary: #212529;
-  --color-text-secondary: #6C757D;
-  --color-gray-888: #6C757D;
+  --color-text-primary: #16191c;
+  --color-text-secondary: #34383d;
+  --color-text-purple: #AD89ED;
+  --color-border: #DEE2E6;
 
   --color-drop-shadow-primary: #646cffaa;
-  --color-drop-shadow-react: #61dafbaa;
+
+  --color-success: #10b981; /* зеленый для успеха */
+  --color-info: #3b82f6; /* синий для информации/загрузки */
+  --color-warning: #f59e0b; /* оранжевый для предупреждений */
+}
+
+:root.dark {
+  --color-bg-primary: #0B0C1C; 
+  --color-bg-secondary: #16182D;
+  --color-bg-tertiary: #1E1F3A;
+  --color-bg-accent: #16182D; 
+
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #888;
+  --color-text-purple: #AD89ED;
+  --color-border: #2E3048;
+
+  --color-drop-shadow-primary: #646cffaa;
+
+  --color-success: #34d399;
+  --color-info: #60a5fa;
+  --color-warning: #fbbf24;
+
 }
