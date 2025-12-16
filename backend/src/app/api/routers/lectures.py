@@ -16,7 +16,7 @@ def get_result(lecture_id: UUID, db: Session = Depends(get_db)):
     if not lecture:
         raise HTTPException(status_code=404, detail="Lecture not found")
 
-    if not lecture.text_url:
+    if not lecture.text:
         raise HTTPException(status_code=400, detail="Result not ready yet")
 
     return lecture

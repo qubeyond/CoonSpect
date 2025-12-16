@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, String, DateTime, func
+from sqlalchemy import Column, ForeignKey, DateTime, func, Text, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
@@ -10,8 +10,7 @@ class Lecture(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     audio_url = Column(String, nullable=False)    # s3 url или локальный путь
-    text_url = Column(String, nullable=True)      # путь к .md/.txt
-    #segments_url = Column(String, nullable=True)  # путь к JSON файлу таймкодов
+    text = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

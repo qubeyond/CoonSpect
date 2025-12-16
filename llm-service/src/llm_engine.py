@@ -15,7 +15,7 @@ class LLMEngine:
         except FileNotFoundError:
             return "Блляяя, прикинь надо структурированный конспектик зафигачить из этого:"
     
-    def summarize(self, text: str, model: str = "deepseek-r1:8b") -> Dict[str, Any]:
+    def summarize(self, text: str, model: str = "ministral-3:3b") -> Dict[str, Any]:
         if not text.strip():
             return {
                 "summary": "", 

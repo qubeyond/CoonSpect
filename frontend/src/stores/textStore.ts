@@ -78,11 +78,9 @@ generateTranscript: async (file: File) => {
           // get result
           const lecture = await getLectureResult(lectureId);
 
-          // text_url сейчас путь к txt
-          if (lecture.text_url) {
-            const text = await fetch(lecture.text_url).then((r) => r.text());
-            set({ processedText: text });
-          }
+          const text = lecture.text;
+          set({ processedText: text });
+
 
           set({ progressStatus: 'finish' });
         } catch (e) {

@@ -7,6 +7,7 @@ import { apiClient, WS_BASE_URL } from './index';
 export async function createLectureTask() {
   console.log("[FRONT] Creating new lecture task...");
   const res = await apiClient.get('/task/create');
+  console.log("error", res.data.msg);
   if (res.data.status !== 'success' || !res.data.msg) {
     throw new Error('Failed to create task');
   }
@@ -78,7 +79,7 @@ export async function uploadAudioViaHTTP(
 
 export async function getLectureResult(lectureId: string) {
   console.log(`[FRONT] Requesting result for task ${lectureId}`);
-  const res = await apiClient.post(`/api/lectures/${lectureId}`);
+  const res = await apiClient.get(`/api/lectures/${lectureId}`);
   console.log(`[FRONT] Result received for task ${lectureId}:`, res.data);
   return res.data;
 }

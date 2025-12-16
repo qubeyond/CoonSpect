@@ -11,7 +11,7 @@ class TextRequest(BaseModel):
 
 @app.post("/summarize")
 async def summarize(request: TextRequest):
-    result = llm.summarize(request.text, "deepseek-r1:8b")
+    result = llm.summarize(request.text, "ministral-3:3b")
     
     if not result.get("success"):
         raise HTTPException(

@@ -1,8 +1,8 @@
 import Text from "../atoms/Text";
 
 const Footer: React.FC = () => (
-  <footer className="border-t border-purple-800/30 dark:border-gray-200 py-6 bg-[#0B0C1C] dark:bg-white text-center">
-    <Text size="sm" className="text-gray-500 dark:text-gray-600">
+  <footer className="border-t border-[var(--color-border)] py-6 bg-[var(--color-bg-primary)] text-center">
+    <Text size="sm" className="text-[var(--color-text-secondary)]">
       © {new Date().getFullYear()} CoonSpect — все права защищены.
     </Text>
   </footer>

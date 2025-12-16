@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from fastapi import WebSocket, WebSocketDisconnect, WebSocketException, status
+from fastapi import WebSocket, WebSocketDisconnect, status
 from fastapi import UploadFile, File
 import uuid
 import tempfile
@@ -77,8 +77,8 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
         return
 
     await manager.connect(websocket, task_id)
-    await manager.send_message(task_id, "connected")
-
+    await manager.send_message(task_id, r.get(f"task:{task_id}"))
+    
     try:
         while True:
             await websocket.receive_text()

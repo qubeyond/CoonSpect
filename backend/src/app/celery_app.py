@@ -1,26 +1,24 @@
-from redis.asyncio import Redis as RedisAsync
-from redis import Redis as RedisSync
 from celery import Celery, chain
 from celery.signals import task_prerun
-from src.app.db.session import SessionLocal
 import json
 import os
 import requests
-from src.app.db.models.lecture import Lecture
 from pathlib import Path
 import uuid
-from src.app.db.models.user import User
 
-import src.app.config as config
+from src.app.db.models.lecture import Lecture
+from src.app.db.models.user import User
+from src.app.db.session import SessionLocal
 from src.app.wsmanager import manager
 from src.app.db.redis import redis_sync, redis_async
+import src.app.config as config
 
 TASK_MESSAGES = {
-    "src.celery_app.stt_task": "stt",
-    "src.celery_app.rag_task": "rag",
-    "src.celery_app.llm_task": "llm",
-    "src.celery_app.upload_lecture_task": "saving",
-    "src.celery_app.finish_task": "finish"
+    "src.app.celery_app.stt_task": "stt",
+    "src.app.celery_app.rag_task": "rag",
+    "src.app.celery_app.llm_task": "llm",
+    "src.app.celery_app.upload_lecture_task": "saving",
+    "src.app.celery_app.finish_task": "finish"
 }
 
 DEFAULT_MESSAGE = "unknown"
@@ -45,16 +43,10 @@ def send_msg(task_id: str, message: str = DEFAULT_MESSAGE):
 
 def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
     """exit from chain with error"""
-    redis_sync.publish("ws_events", json.dumps({
-        "task_id": task_id,
-        "message": "error"
-    }))
+    send_msg(task_id, "error")
+    send_msg(task_id, message)
+    manager.disconnect(task_id)
 
-    redis_sync.publish("ws_events", json.dumps({
-        "task_id": task_id,
-        "message": message
-    }))
-    
     binding.retry(countdown=0, max_retries=0)
 
     raise ChainException(message)
@@ -71,7 +63,7 @@ def stt_task(self, payload: dict):
         response = requests.post(
             config.STT_SERVICE_URL+"/transcribe",
             headers = {"task_id": payload["task_id"]},
-            files = {f"audio": audiof},
+            files = {f"file": audiof},
             timeout = 1800
         )
     
@@ -81,7 +73,6 @@ def stt_task(self, payload: dict):
 
     payload["data"] = response.json()["text"]
 
-    payload["data"] = "hello world"
     return payload
 
 @celery.task(bind = True)
@@ -104,15 +95,14 @@ def llm_task(self, payload: dict):
 
     response = requests.post(
         config.LLM_SERVICE_URL+"/summarize",
-        headers={"Content-Type": "text/plain"},
-        data=payload["data"],
+        json={"text":payload["data"]},
         timeout = 1800
     )
 
     if (response.status_code != 200):
         exit_chain(self, payload["task_id"], f"Error with llm request, status {response.status_code}")
 
-    payload["data"] = response.json()["text"]
+    payload["data"] = response.json()["summary"]
     return payload
 
 @celery.task(bind = True)
@@ -136,7 +126,7 @@ def upload_lecture_task(payload: dict):
         lecture = Lecture(
             user_id=payload["user_uuid"],
             audio_url=payload["audio_filepath"],
-            text_url="nourl",
+            text=payload["data"],
         )
         db.add(lecture)
         db.commit()
@@ -166,6 +156,8 @@ def finish_task(payload: dict):
 @task_prerun.connect
 def track_task(task_id=None, task=None, sender=None, **kwargs):
     status = TASK_MESSAGES.get(sender.name, DEFAULT_MESSAGE)
+    task_id = kwargs["args"][0]["task_id"]
+    redis_sync.set(f"task:{task_id}", status)
     send_msg(kwargs["args"][0]["task_id"], status)
 
 def run_audio_pipeline(task_id: str, user_uuid: uuid.UUID, audio_filepath: str):
@@ -199,8 +191,8 @@ def run_audio_pipeline_test(task_id: str, audio_filepath: str):
     
     user = User(
         id = uuid.uuid4(),
-        username = uuid.uuid4(),
-        password_hash = uuid.uuid4()
+        username = str(uuid.uuid4()),
+        password_hash = str(uuid.uuid4())
     )
 
     with SessionLocal() as db:
@@ -211,7 +203,7 @@ def run_audio_pipeline_test(task_id: str, audio_filepath: str):
     if not os.path.exists(audio_filepath):
         raise Exception(f"File {audio_filepath} not found")
 
-    print(f"[AUDIO PIPELINE] task_id: {task_id}; user_uuid {user.id}; audio_filepath {audio_filepath}")
+    print(f"[AUDIO PIPELINE] task_id: {task_id}; user_uuid {str(user.id)}; audio_filepath {audio_filepath}")
 
     initial_payload = {
         "task_id": task_id,
