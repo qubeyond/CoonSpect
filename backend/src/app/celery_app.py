@@ -47,7 +47,8 @@ def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
     """exit from chain with error"""
     send_msg(task_id, "error")
     send_msg(task_id, message)
-    
+    manager.disconnect(task_id)
+
     binding.retry(countdown=0, max_retries=0)
 
     raise ChainException(message)
@@ -215,8 +216,8 @@ def run_audio_pipeline_test(task_id: str, audio_filepath: str):
     }
 
     chain(
-        stt_task.s(initial_payload),
-        llm_task.s(),
+        stt_task_test.s(initial_payload),
+        llm_task_test.s(),
         upload_lecture_task.s(),
         finish_task.s()
     ).apply_async()

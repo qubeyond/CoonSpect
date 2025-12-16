@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from fastapi import WebSocket, WebSocketDisconnect, WebSocketException, status
+from fastapi import WebSocket, WebSocketDisconnect, status
 from fastapi import UploadFile, File
 import uuid
 import tempfile
