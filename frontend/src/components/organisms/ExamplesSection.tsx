@@ -20,21 +20,21 @@ const ExamplesSection: React.FC = () => {
   return (
     <section
       id="examples"
-      className="py-24 bg-gradient-to-b from-[#14152D] to-[#0B0C1C] text-center"
+      className="py-24 bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] text-center"
     >
-      <Heading level={2} className="text-purple-400 mb-8 text-3xl font-bold">
+      <Heading level={2} className="text-[var(--color-text-purple)] mb-8 text-3xl font-bold">
         Примеры конспектов
       </Heading>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10 max-w-6xl mx-auto px-6">
         {examples.map((ex, i) => (
           <div
             key={i}
-            className="bg-[#16182D] p-8 rounded-2xl border border-purple-800/20 hover:border-purple-500/40 transition transform hover:-translate-y-1"
+            className="bg-[var(--color-bg-accent)] p-8 rounded-2xl hover:border-[var(--color-purple-500)]/40 transition transform hover:-translate-y-1"
           >
-            <Text size="lg" className="text-white font-semibold mb-2">
+            <Text size="lg" className="text-[var(--color-text-primary)] font-semibold mb-2">
               {ex.title}
             </Text>
-            <Text size="sm" className="text-gray-400">
+            <Text size="sm" className="text-[var(--color-text-secondary)]">
               {ex.desc}
             </Text>
           </div>

@@ -5,9 +5,9 @@ const HowItWorksSection: React.FC = () => {
   return (
     <section
       id="how"
-      className="py-24 bg-[#10112A] text-center flex flex-col items-center"
+      className="py-24 bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] text-center flex flex-col items-center"
     >
-      <Heading level={2} className="text-purple-400 mb-12 text-3xl font-bold">
+      <Heading level={2} className="text-[var(--color-purple-400)] mb-12 text-3xl font-bold">
         Как это работает
       </Heading>
       <div className="grid sm:grid-cols-3 gap-12 max-w-5xl px-6">

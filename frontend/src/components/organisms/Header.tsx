@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
-import { Menu, LogOut, User, Upload, Home, FileText } from "lucide-react";
+import { useAppStore } from "../../stores/appStore";
+import { Menu, LogOut, User, Upload, Home, FileText, Sun, Moon } from "lucide-react";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { theme, setTheme } = useAppStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,18 @@ const Header: React.FC = () => {
   }, []);
 
   const scrollTo = (id: string) => {
+    if (id === "hero") {
+      if (location.pathname !== "/upload") {
+        navigate("/");
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 100);
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      setMenuOpen(false);
+      return;
+    }
     if (location.pathname !== "/upload") {
       navigate("/");
       setTimeout(() => {
@@ -49,51 +63,59 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#0B0C1C]/80 backdrop-blur-md border-b border-purple-800/30 z-50">
+    <header className="fixed top-0 left-0 w-full bg-[var(--color-bg-accent)]/80 backdrop-blur-md border-b border-[var(--color-border)] z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
         {/* Logo */}
         <h1
           onClick={() => navigate("/")}
-          className="text-2xl font-semibold text-purple-400 cursor-pointer hover:text-purple-300 transition"
+          className="text-2xl font-semibold text-[var(--color-text-purple)] cursor-pointer hover:opacity-80 transition"
         >
           CoonSpect
         </h1>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-8 text-sm text-gray-300">
-          <button onClick={() => scrollTo("hero")} className="hover:text-purple-400 transition">
+        <nav className="hidden md:flex gap-8 text-sm text-[var(--color-text-secondary)] items-center">
+          <button onClick={() => scrollTo("hero")} className="hover:text-[var(--color-text-purple)] transition">
             Главная
           </button>
-          <button onClick={() => scrollTo("how")} className="hover:text-purple-400 transition">
+          <button onClick={() => scrollTo("how")} className="hover:text-[var(--color-text-purple)] transition">
             Как это работает
           </button>
-          <button onClick={() => scrollTo("examples")} className="hover:text-purple-400 transition">
+          <button onClick={() => scrollTo("examples")} className="hover:text-[var(--color-text-purple)] transition">
             Примеры
           </button>
-          <button onClick={() => navigate("/files")} className="hover:text-purple-400 transition">
+          <button onClick={() => navigate("/files")} className="hover:text-[var(--color-text-purple)] transition">
             Мои файлы
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="hover:text-[var(--color-text-purple)] transition"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {user ? (
             <div className="relative" ref={profileMenuRef}>
-              <button 
-                className="flex items-center gap-2 hover:text-purple-400 transition"
+              <button
+                className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition"
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
               >
                 <User className="w-4 h-4" />
                 {user.username}
               </button>
               {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-[#16182D] border border-purple-800/40 rounded-lg shadow-lg overflow-hidden">
+                <div className="absolute right-0 mt-2 w-48 bg-[var(--color-bg-accent)] border border-[var(--color-border)] rounded-lg shadow-lg overflow-hidden">
                   <button
                     onClick={() => handleNavigation("/profile")}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-left hover:bg-purple-600/20 transition border-b border-purple-800/20"
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-left hover:bg-[var(--color-bg-secondary)] transition border-b border-[var(--color-border)]"
                   >
                     <User className="w-4 h-4" /> Профиль
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-left hover:bg-purple-600/20 transition"
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-left hover:bg-[var(--color-bg-secondary)] transition"
                   >
                     <LogOut className="w-4 h-4" /> Выйти
                   </button>
@@ -103,7 +125,7 @@ const Header: React.FC = () => {
           ) : (
             <button
               onClick={() => navigate("/login")}
-              className="hover:text-purple-400 transition"
+              className="hover:text-[var(--color-text-purple)] transition"
             >
               Войти
             </button>
@@ -112,7 +134,7 @@ const Header: React.FC = () => {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-gray-300 hover:text-purple-400 transition"
+          className="md:hidden text-[var(--color-text-secondary)] hover:text-[var(--color-text-purple)] transition"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           <Menu className="w-6 h-6" />
@@ -121,32 +143,32 @@ const Header: React.FC = () => {
 
       {/* Mobile Dropdown */}
       {menuOpen && (
-        <div className="md:hidden bg-[#0B0C1C]/95 border-t border-purple-800/40 py-4 px-6 text-gray-300 space-y-3">
-          <button onClick={() => scrollTo("hero")} className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left">
+        <div className="md:hidden bg-[var(--color-bg-accent)] border-t border-[var(--color-border)] py-4 px-6 text-[var(--color-text-secondary)] space-y-3">
+          <button onClick={() => scrollTo("hero")} className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition w-full text-left">
             <Home className="w-4 h-4" /> Главная
           </button>
-          <button onClick={() => scrollTo("how")} className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left">
+          <button onClick={() => scrollTo("how")} className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition w-full text-left">
             <FileText className="w-4 h-4" /> Как это работает
           </button>
-          <button onClick={() => scrollTo("examples")} className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left">
+          <button onClick={() => scrollTo("examples")} className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition w-full text-left">
             <Upload className="w-4 h-4" /> Примеры
           </button>
-          <button onClick={() => navigate("/files")} className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left">
+          <button onClick={() => navigate("/files")} className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition w-full text-left">
             <FileText className="w-4 h-4" /> Мои файлы
           </button>
 
           {user ? (
             <>
-              <div className="border-t border-purple-800/30 my-2" />
+              <div className="border-t border-[var(--color-border)] my-2" />
               <button
                 onClick={() => handleNavigation("/profile")}
-                className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left"
+                className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition w-full text-left"
               >
                 <User className="w-4 h-4" /> Профиль
               </button>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left"
+                className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition w-full text-left"
               >
                 <LogOut className="w-4 h-4" /> Выйти
               </button>
@@ -154,7 +176,7 @@ const Header: React.FC = () => {
           ) : (
             <button
               onClick={() => navigate("/login")}
-              className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left"
+              className="flex items-center gap-2 hover:text-[var(--color-text-purple)] transition w-full text-left"
             >
               <User className="w-4 h-4" /> Войти
             </button>

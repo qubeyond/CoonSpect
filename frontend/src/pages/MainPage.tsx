@@ -1,4 +1,3 @@
-// import { useEffect } from "react";
 import type { FC } from "react";
 import { useTextStore, useAuthStore, useAppStore } from "../stores";
 import Header from "../components/organisms/Header";
@@ -38,11 +37,11 @@ const MainPage: FC = () => {
   };
 
   return (
-    <div className="bg-[#0B0C1C] text-white min-h-screen font-sans overflow-x-hidden">
+    <div className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] min-h-screen font-sans overflow-x-hidden">
       <Header />
 
       {appState === "upload" && (
-        <section className="relative flex flex-col justify-center items-center min-h-screen px-6 bg-gradient-to-b from-[#0B0C1C] to-[#16182D]">
+        <section className="relative flex flex-col justify-center items-center min-h-screen px-6 bg-gradient-to-b from-[var(--color-bg-primary)] to-[var(--color-bg-secondary)]">
           <div className="max-w-5xl mx-auto text-center pt-24 pb-16">
             <UploadSection onGenerate={handleGenerate} />
           </div>
@@ -50,7 +49,7 @@ const MainPage: FC = () => {
       )}
 
       {appState === "loading" && (
-        <section className="relative flex flex-col justify-center items-center min-h-screen px-6 bg-gradient-to-b from-[#0B0C1C] to-[#16182D]">
+        <section className="relative flex flex-col justify-center items-center min-h-screen px-6 bg-gradient-to-b from-[var(--color-bg-accent)] to-[var(--color-bg-secondary)]">
           <div className="max-w-5xl mx-auto text-center pt-24 pb-16">
             <LoadingSection progressStatus={progressStatus}/>
           </div>
