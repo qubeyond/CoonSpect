@@ -166,6 +166,8 @@ def finish_task(payload: dict):
 @task_prerun.connect
 def track_task(task_id=None, task=None, sender=None, **kwargs):
     status = TASK_MESSAGES.get(sender.name, DEFAULT_MESSAGE)
+    task_id = kwargs["args"][0]["task_id"]
+    redis_sync.set(f"task:{task_id}", status)
     send_msg(kwargs["args"][0]["task_id"], status)
 
 def run_audio_pipeline(task_id: str, user_uuid: uuid.UUID, audio_filepath: str):
