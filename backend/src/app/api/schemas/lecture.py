@@ -4,7 +4,7 @@ from datetime import datetime
 
 class LectureBase(BaseModel):
     audio_url: str | None = None
-    text_url: str | None = None
+    text: str | None = None
     segments_url: str | None = None
 
 
