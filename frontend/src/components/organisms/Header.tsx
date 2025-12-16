@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
-import { Menu, LogOut, User, Upload, Home, FileText } from "lucide-react";
+import { useAppStore } from "../../stores/appStore";
+import { Menu, LogOut, User, Upload, Home, FileText, Sun, Moon } from "lucide-react"; // убрать в атом Icon!
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { theme, setTheme } = useAppStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,19 @@ const Header: React.FC = () => {
   }, []);
 
   const scrollTo = (id: string) => {
+    if (id === "hero") {
+      // Scroll to top of the page for Главная button
+      if (location.pathname !== "/upload") {
+        navigate("/");
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 100);
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      setMenuOpen(false);
+      return;
+    }
     if (location.pathname !== "/upload") {
       navigate("/");
       setTimeout(() => {
@@ -49,7 +64,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-[#0B0C1C]/80 backdrop-blur-md border-b border-purple-800/30 z-50">
+    <header className="fixed top-0 left-0 w-full bg-dark-400/80 dark:bg-light-400/80 backdrop-blur-md border-b border-purple-800/30 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
         {/* Logo */}
         <h1
@@ -60,7 +75,7 @@ const Header: React.FC = () => {
         </h1>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-8 text-sm text-gray-300">
+        <nav className="hidden md:flex gap-8 text-sm text-gray-400 dark:text-gray-600 items-center">
           <button onClick={() => scrollTo("hero")} className="hover:text-purple-400 transition">
             Главная
           </button>
@@ -74,9 +89,17 @@ const Header: React.FC = () => {
             Мои файлы
           </button>
 
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="hover:text-purple-400 transition"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           {user ? (
             <div className="relative" ref={profileMenuRef}>
-              <button 
+              <button
                 className="flex items-center gap-2 hover:text-purple-400 transition"
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
               >
@@ -84,7 +107,7 @@ const Header: React.FC = () => {
                 {user.username}
               </button>
               {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-[#16182D] border border-purple-800/40 rounded-lg shadow-lg overflow-hidden">
+                <div className="absolute right-0 mt-2 w-48 bg-dark-200 dark:bg-light-200 border border-purple-800/40 rounded-lg shadow-lg overflow-hidden">
                   <button
                     onClick={() => handleNavigation("/profile")}
                     className="flex items-center gap-2 w-full px-4 py-3 text-sm text-left hover:bg-purple-600/20 transition border-b border-purple-800/20"
@@ -112,7 +135,7 @@ const Header: React.FC = () => {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-gray-300 hover:text-purple-400 transition"
+          className="md:hidden text-gray-400 dark:text-gray-600 hover:text-purple-400 transition"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           <Menu className="w-6 h-6" />
@@ -121,7 +144,7 @@ const Header: React.FC = () => {
 
       {/* Mobile Dropdown */}
       {menuOpen && (
-        <div className="md:hidden bg-[#0B0C1C]/95 border-t border-purple-800/40 py-4 px-6 text-gray-300 space-y-3">
+        <div className="md:hidden bg-[var(--color-bg-accent)]/95 border-t border-purple-800/40 py-4 px-6 text-[var(--color-text-secondary)] space-y-3">
           <button onClick={() => scrollTo("hero")} className="flex items-center gap-2 hover:text-purple-400 transition w-full text-left">
             <Home className="w-4 h-4" /> Главная
           </button>

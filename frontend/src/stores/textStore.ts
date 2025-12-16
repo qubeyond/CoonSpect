@@ -58,30 +58,38 @@ export const useTextStore = create<AudioState>()(
         set({ audioFile: null, audioUrl: null, isSaving: false });
       },
 
-      generateTranscript: async (file: File) => {
-        const { setIsSaving, setProgressStatus, setProcessedText } = get();
-        setIsSaving(true);
-        setProgressStatus('uploading');
+generateTranscript: async (file: File) => {
+        set({ isSaving: true, progressStatus: 'uploading' });
 
         try {
-          const { task_id } = await createLectureTask();
-          console.log('Created task_id:', task_id);
+          // create task
+          const { taskId } = await createLectureTask();
+          console.log('[FRONT] task created', taskId);
 
-          await uploadAudioViaHTTP(file, task_id, (status) => {
-            console.log('Progress update:', status);
-            setProgressStatus(status);
-          });
+          // upload + ws tracking
+          const { lectureId } = await uploadAudioViaHTTP(
+            file,
+            taskId,
+            (status) => set({ progressStatus: status })
+          );
 
-          const result = await getLectureResult(task_id);
-          console.log('Received result:', result);
-          setProcessedText(result.content);
-          setProgressStatus('finish');
+          console.log('[FRONT] lecture_id received', lectureId);
 
-        } catch (err) {
-          console.error('Ошибка при обработке аудио:', err);
-          setProgressStatus(null);
+          // get result
+          const lecture = await getLectureResult(lectureId);
+
+          // text_url сейчас путь к txt
+          if (lecture.text_url) {
+            const text = await fetch(lecture.text_url).then((r) => r.text());
+            set({ processedText: text });
+          }
+
+          set({ progressStatus: 'finish' });
+        } catch (e) {
+          console.error('[FRONT] audio processing error', e);
+          set({ progressStatus: null });
         } finally {
-          setIsSaving(false);
+          set({ isSaving: false });
         }
       },
     }),

@@ -1,0 +1,31 @@
+:root {
+  /* Default dark theme colors */
+  --color-bg-primary: #1E1F3A;
+  --color-bg-secondary: #16182D;
+  --color-bg-tertiary: #10112A;
+  --color-bg-accent: #0B0C1C;
+
+  /* Other colors */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #888;
+  --color-gray-888: #888;
+
+  /* Drop shadow colors */
+  --color-drop-shadow-primary: #646cffaa;
+  --color-drop-shadow-react: #61dafbaa;
+}
+
+/* Light theme */
+:root[data-theme="light"] {
+  --color-bg-primary: #F8F9FA;
+  --color-bg-secondary: #E9ECEF;
+  --color-bg-tertiary: #DEE2E6;
+  --color-bg-accent: #CED4DA;
+
+  --color-text-primary: #212529;
+  --color-text-secondary: #6C757D;
+  --color-gray-888: #6C757D;
+
+  --color-drop-shadow-primary: #646cffaa;
+  --color-drop-shadow-react: #61dafbaa;
+}
