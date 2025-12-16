@@ -45,15 +45,8 @@ def send_msg(task_id: str, message: str = DEFAULT_MESSAGE):
 
 def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
     """exit from chain with error"""
-    redis_sync.publish("ws_events", json.dumps({
-        "task_id": task_id,
-        "message": "error"
-    }))
-
-    redis_sync.publish("ws_events", json.dumps({
-        "task_id": task_id,
-        "message": message
-    }))
+    send_msg(task_id, "error")
+    send_msg(task_id, message)
     
     binding.retry(countdown=0, max_retries=0)
 
