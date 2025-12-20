@@ -4,16 +4,22 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class', 
   theme: {
     extend: {
       colors: {
-        dark: {
-          100: '#1E1F3A',
-          200: '#16182D', 
-          300: '#10112A',
-          400: '#0B0C1C',
-        }
-      },
+        bg: {
+          primary: 'var(--color-bg-primary)',
+          secondary: 'var(--color-bg-secondary)',
+          tertiary: 'var(--color-bg-tertiary)',
+          accent: 'var(--color-bg-accent)',
+        },
+        text: {
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+        },
+        border: 'var(--color-border)',
+      }
     },
   },
   plugins: [],

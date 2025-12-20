@@ -1,4 +1,3 @@
-// components/molecules/UploadBox.tsx
 import { useState, useRef, useEffect } from "react";
 import { useTextStore } from "../../stores";
 
@@ -25,11 +24,19 @@ function UploadBox({ onFileSelect }: UploadBoxProps) {
 
     const handleFile = async (file: File) => {
         if (file && file.type.startsWith('audio/')) {
+            const maxSize = 50 * 1024 * 1024;
+        
+            if (file.size > maxSize) {
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                alert(`Файл слишком большой: ${fileSizeMB} МБ. Максимальный размер: 50 МБ.`);
+                return;
+            }
+
             setFileName(file.name);
             setAudioFile(file);
             onFileSelect(file);
         } else {
-            alert("Пожалуйста, выберите аудио файл."); //или видео (ну пока без выебонов)
+            alert("Пожалуйста, выберите аудио файл.");
         }
     };
 
@@ -83,10 +90,10 @@ function UploadBox({ onFileSelect }: UploadBoxProps) {
             className={`
                 w-4/5 h-80 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300
                 ${isDragging
-                    ? 'border-purple-400 bg-purple-500/10 scale-105 shadow-lg'
-                    : 'border-purple-600/50 hover:border-purple-400 hover:bg-purple-500/5'
+                    ? 'border-[var(--color-text-purple)] bg-[var(--color-text-purple)]/10 scale-105 shadow-lg'
+                    : 'border-[var(--color-border)] hover:border-[var(--color-text-purple)] hover:bg-[var(--color-text-purple)]/5'
                 }
-                ${fileName ? 'border-green-500 bg-green-500/5' : ''}
+                ${fileName ? 'border-[var(--color-text-purple)] bg-[var(--color-text-purple)]/5' : ''}
                 ${isSaving ? 'opacity-50 cursor-wait' : ''}
             `}
         >
@@ -101,24 +108,24 @@ function UploadBox({ onFileSelect }: UploadBoxProps) {
             <div className="text-center p-8">
                 {isSaving ? (
                     <>
-                        <Icon name="Loader2" className="w-16 h-16 text-blue-400 mb-4 mx-auto animate-spin" />
-                        <Text size="lg" className="text-blue-400 font-semibold mb-2">
+                        <Icon name="Loader2" className="w-16 h-16 text-[var(--color-text-purple)] mb-4 mx-auto animate-spin" />
+                        <Text size="lg" className="text-[var(--color-text-purple)] font-semibold mb-2">
                             Сохраняем на диск...
                         </Text>
-                        <Text size="sm" className="text-gray-400">
+                        <Text size="sm" className="text-[var(--color-text-secondary)]">
                             Файл: {fileName}
                         </Text>
                     </>
                 ) : fileName ? (
                     <>
-                        <Icon name="Check" className="w-16 h-16 text-green-400 mb-4 mx-auto" />
-                        <Text size="lg" className="text-green-400 font-semibold mb-2">
+                        <Icon name="Check" className="w-16 h-16 text-[var(--color-text-purple)] mb-4 mx-auto" />
+                        <Text size="lg" className="text-[var(--color-text-purple)] font-semibold mb-2">
                             Файл готов
                         </Text>
-                        <Text size="sm" className="text-gray-300 break-all mb-2">
+                        <Text size="sm" className="text-[var(--color-text-secondary)] break-all mb-2">
                             {fileName}
                         </Text>
-                        <Text size="sm" className="text-gray-500">
+                        <Text size="sm" className="text-[var(--color-text-secondary)]">
                             Нажмите для выбора другого файла
                         </Text>
                     </>
@@ -127,16 +134,16 @@ function UploadBox({ onFileSelect }: UploadBoxProps) {
                         <Icon
                             name={isDragging ? "Download" : "Upload"}
                             className={`w-16 h-16 mb-4 mx-auto transition-transform ${
-                                isDragging ? 'text-purple-400 scale-110' : 'text-purple-400'
+                                isDragging ? 'text-[var(--color-text-purple)] scale-110' : 'text-[var(--color-text-purple)]'
                             }`}
                         />
-                        <Text size="lg" className="text-white font-semibold mb-2">
+                        <Text size="lg" className="text-[var(--color-text-primary)] font-semibold mb-2">
                             {isDragging ? "Отпустите файл" : "Перетащите аудиофайл"}
                         </Text>
-                        <Text size="sm" className="text-gray-400 mb-2">
+                        <Text size="sm" className="text-[var(--color-text-secondary)] mb-2">
                             или нажмите для выбора
                         </Text>
-                        <Text size="sm" className="text-gray-500">
+                        <Text size="sm" className="text-[var(--color-text-secondary)]">
                             Поддерживаемые форматы: MP3, WAV, M4A и другие аудиофайлы
                         </Text>
                     </>
