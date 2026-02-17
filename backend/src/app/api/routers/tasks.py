@@ -12,7 +12,7 @@ from src.app.db.redis import redis_sync as r
 router = APIRouter(prefix="/task", tags=["tasks"])
 
 @router.get("/create")
-def create_task():
+async def create_task():
     """
     Создать задачу
     """
