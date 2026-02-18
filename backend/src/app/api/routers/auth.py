@@ -1,113 +1,79 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
 from src.app.db.redis import redis_sync as redis
-from src.app.api.schemas.user import UserCreate, Token, RefreshTokenRequest, LogoutRequest
+from src.app.api.schemas.user import UserCreate, Token, RefreshToken
 from src.app.api.schemas.status import Status
-from src.app.api.deps import get_current_user
 from src.app.db.session import get_db
-from src.app.db.models.user import User
 from src.app.security import (
     hash_password,
     verify_password,
     create_access_token,
     create_refresh_token,
-    decode_token
 )
+from src.app.api.tools import decode_token
+
+from src.app.db.models import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=Token)
-async def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.username == user_in.username).first():
+async def register(content: UserCreate, db: Session = Depends(get_db)):
+    if db.query(User).filter(User.username == content.username).first():
         raise HTTPException(status_code=400, detail="Username already exists")
     
     user = User(
-        username=user_in.username,
-        password_hash=hash_password(user_in.password)
+        username=content.username,
+        password_hash=hash_password(content.password)
     )
     db.add(user)
     db.commit()
     db.refresh(user)
-
-    access_token = create_access_token(user.username)
-    refresh_token = create_refresh_token(user.username)
+    
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 @router.post("/login", response_model=Token)
-async def login(user_in: UserCreate, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == user_in.username).first()
-    if not user or not verify_password(user_in.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+async def login(content: UserCreate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == content.username).first()
+    if user == None:
+        raise HTTPException(status_code=401, detail="Invalid username")
     
-    access_token = create_access_token(user.username)
-    refresh_token = create_refresh_token(user.username)
+    if not verify_password(content.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 @router.post("/refresh", response_model=Token)
-async def refresh(request: RefreshTokenRequest, db: Session = Depends(get_db)):
-    if redis.exists(f"blacklist:{request.refresh_token}"):
-        raise HTTPException(status_code=401, detail="Token has been revoked")
-
-    try:
-        payload = decode_token(request.refresh_token)
-        if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
-        username = payload.get("sub")
-        if not username:
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
-    
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+async def refresh(content: RefreshToken):
+    payload = decode_token(content.refresh_token, "refresh")
     
     refresh_exp = payload["exp"]
     refresh_ttl = max(int(refresh_exp - datetime.now(timezone.utc).timestamp()), 1)
-    redis.setex(f"blacklist:{request.refresh_token}", refresh_ttl, "true")
+    redis.setex(f"blacklist:{content.refresh_token}", refresh_ttl, "true")
 
-    access_token = create_access_token(username)
-    refresh_token = create_refresh_token(username)
+    access_token = create_access_token(payload["uuid"])
+    refresh_token = create_refresh_token(payload["uuid"])
     
     return Token(access_token=access_token, refresh_token=refresh_token)
 
-@router.post("/logout")
-async def logout(
-    request: Request,
-    logout_request: LogoutRequest,
-    current_user: User = Depends(get_current_user)
-):
-    auth_header = request.headers.get("authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing access token")
-    
-    access_token = auth_header[len("Bearer "):]
+@router.post("/logout", response_model=Status)
+async def logout(content: Token):
+    access_payload = decode_token(content.access_token, "access")
+    refresh_payload = decode_token(content.refresh_token, "refresh")
 
-    try:
-        refresh_payload = decode_token(logout_request.refresh_token)
-        if refresh_payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
-    
-    if redis.exists(f"blacklist:{logout_request.refresh_token}"):
-        raise HTTPException(status_code=401, detail="Token already revoked")
-    
     refresh_exp = refresh_payload["exp"]
     refresh_ttl = max(int(refresh_exp - datetime.now(timezone.utc).timestamp()), 1)
 
-    try:
-        access_payload = decode_token(access_token)
-        if access_payload.get("type") != "access":
-            raise HTTPException(status_code=401, detail="Invalid token type")
-        access_exp = access_payload["exp"]
-        access_ttl = max(int(access_exp - datetime.now(timezone.utc).timestamp()), 1)
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid access token")
+    access_exp = access_payload["exp"]
+    access_ttl = max(int(access_exp - datetime.now(timezone.utc).timestamp()), 1)
     
-    redis.setex(f"blacklist:{logout_request.refresh_token}", refresh_ttl, "true")
-    redis.setex(f"blacklist:{access_token}", access_ttl, "true")
+    redis.setex(f"blacklist:{content.refresh_token}", refresh_ttl, "true")
+    redis.setex(f"blacklist:{content.access_token}", access_ttl, "true")
     
-    return Status.success("Logged out successfully")
+    return Status.success()
