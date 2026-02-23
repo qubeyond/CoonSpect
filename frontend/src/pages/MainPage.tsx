@@ -1,4 +1,3 @@
-
 import type { FC } from "react";
 import { useTextStore, useAuthStore, useAppStore } from "../stores";
 import Header from "../components/organisms/Header";
@@ -80,7 +79,6 @@ const MainPage: FC = () => {
     <div className="bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] min-h-screen font-sans overflow-x-hidden">
       <Header />
       {renderContent()}
-      
       {(appState === "upload" || appState === "loading") && (
         <>
           <HowItWorksSection />

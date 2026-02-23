@@ -1,17 +1,19 @@
 from fastapi import WebSocket
-import asyncio
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, WebSocket] = {}
+        self.active_connections: dict[str, WebSocket] = {}
     
-    async def connect(self, websocket: WebSocket, task_id: int):
+    async def connect(self, websocket: WebSocket, task_id: str):
         await websocket.accept()
         self.active_connections[task_id] = websocket
     
-    def disconnect(self, task_id: int):
+    def disconnect(self, task_id: str):
         if task_id in self.active_connections:
             del self.active_connections[task_id]
+
+    def contains(self, task_id: str) -> bool:
+        return self.active_connections.get(task_id) != None
     
     async def send_message(self, task_id: str, message: str):
         if task_id in self.active_connections:

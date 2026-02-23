@@ -1,4 +1,3 @@
-
 import {
   Upload, Edit3, Loader2, Check, Download, FileX, FileAudio, Trash2, ArrowLeft,
   Bold, Italic, List, Heading, Quote, Link, Save, Copy,
@@ -18,7 +17,7 @@ const Icon: React.FC<IconProps> = ({ name, className = "w-5 h-5" }) => {
     Bold, Italic, List, Heading, Quote, Link, Save, Copy,
     LogOut, FileText, Home, Sun, Moon, Menu, User, LogIn
   };
-  
+
   const IconComponent = icons[name];
   return <IconComponent className={className} />;
 };

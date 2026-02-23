@@ -103,7 +103,6 @@ const EditorSection: React.FC<EditorSectionProps> = ({
                 }
                 handleTextChange(newText);
                 break;
-
             case 'italic':
                 const italicBefore = text.substring(start - 1, start) === '*';
                 const italicAfter = text.substring(end, end + 1) === '*';
@@ -117,7 +116,6 @@ const EditorSection: React.FC<EditorSectionProps> = ({
                 }
                 handleTextChange(newText);
                 break;
-
             case 'list':
             case 'heading':
             case 'quote':

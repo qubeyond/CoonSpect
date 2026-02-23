@@ -4,6 +4,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useAppStore } from "../../stores/appStore";
 import { Menu, LogOut, User, Upload, Home, FileText, Sun, Moon, LogIn } from "lucide-react";
 
+
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
