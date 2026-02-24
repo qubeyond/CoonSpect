@@ -53,7 +53,6 @@ class STTEngine:
     #             os.unlink(video_path)
     
     def transcribe(self, file_bytes: bytes, language: str = "ru", file_type: str = "audio") -> str:
-        
         # if file_type == "audio":
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
             f.write(file_bytes)
