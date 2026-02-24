@@ -128,7 +128,4 @@ networks:
 
 volumes:
   postgres_data:
-<<<<<<< ilya_branch
   ollama_models:
-=======
->>>>>>> main
