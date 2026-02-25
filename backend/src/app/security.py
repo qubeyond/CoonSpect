@@ -1,9 +1,9 @@
-import jwt
-from uuid import UUID
 from datetime import datetime, timedelta, timezone
-from passlib.context import CryptContext
 from typing import Any
+from uuid import UUID
 
+import jwt
+from passlib.context import CryptContext
 from src.app.config import settings
 from src.app.db.redis import redis_sync as redis
 
@@ -16,31 +16,31 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 def create_access_token(uuid: UUID) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "uuid": uuid.int,
         "exp": int(expire.timestamp()),
         "type": "access"
     }
-    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(uuid: UUID) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     payload = {
         "uuid": uuid.int,
         "exp": int(expire.timestamp()),
         "type": "refresh"
     }
-    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
 
 def validate_token(token: str) -> dict[str, Any]:
     if redis.exists(f"blacklist:{token}"):
         raise Exception("Token has been revoked")
-    
+
     try:
         payload = decode_token(token)
     except Exception as e:
@@ -49,20 +49,20 @@ def validate_token(token: str) -> dict[str, Any]:
 
     if payload.get("type") != "access" and payload.get("type") != "refresh":
         raise Exception("Invalid token type")
-    
+
     elif payload.get("exp") == None:
         raise Exception("Invalid token type")
-    
+
     elif payload.get("exp") - datetime.now(timezone.utc).timestamp() < 0:
         raise Exception("Token expired")
-    
+
     elif payload.get("uuid") == None:
         raise Exception("Invalid token payload")
-    
+
     try:
         payload["uuid"] = UUID(int = payload["uuid"])
     except Exception as e:
         print(e)
         raise Exception("Invalid token payload")
-    
+
     return payload

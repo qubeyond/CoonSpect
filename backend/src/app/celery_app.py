@@ -1,17 +1,17 @@
-from celery import Celery, chain
-from celery.signals import task_prerun
 import json
 import os
-import requests
-from pathlib import Path
 import uuid
+from pathlib import Path
 
+import requests
+from celery import Celery, chain
+from celery.signals import task_prerun
+from src.app.config import settings
 from src.app.db.models.lecture import Lecture
 from src.app.db.models.user import User
+from src.app.db.redis import redis_async, redis_sync
 from src.app.db.session import SessionLocal
 from src.app.wsmanager import manager
-from src.app.db.redis import redis_sync, redis_async
-import src.app.config as config
 
 TASK_MESSAGES = {
     "src.app.celery_app.stt_task": "stt",
@@ -27,8 +27,8 @@ TASK_FINISH = "src.celery_app.finish_task"
 
 celery = Celery(
     "tasks",
-    broker = config.REDIS_URL,
-    backend = config.REDIS_URL
+    broker = settings.REDIS_URL,
+    backend = settings.REDIS_URL
 )
 
 class ChainException(Exception):
@@ -50,7 +50,7 @@ def exit_chain(binding, task_id: str, message: str = DEFAULT_MESSAGE):
     binding.retry(countdown=0, max_retries=0)
 
     raise ChainException(message)
-    
+
 
 @celery.task(bind = True)
 def stt_task(self, payload: dict):
@@ -61,12 +61,12 @@ def stt_task(self, payload: dict):
     """
     with open(payload["audio_filepath"], "rb") as audiof:
         response = requests.post(
-            config.STT_SERVICE_URL+"/transcribe",
+            settings.STT_SERVICE_URL+"/transcribe",
             headers = {"task_id": payload["task_id"]},
-            files = {f"file": audiof},
+            files = {"file": audiof},
             timeout = 1800
         )
-    
+
     os.remove(payload["audio_filepath"])
     if (response.status_code != 200):
         exit_chain(self, payload["task_id"], f"Error with stt request, status {response.status_code}")
@@ -94,7 +94,7 @@ def llm_task(self, payload: dict):
     """
 
     response = requests.post(
-        config.LLM_SERVICE_URL+"/summarize",
+        settings.LLM_SERVICE_URL+"/summarize",
         json={"text":payload["data"]},
         timeout = 1800
     )
@@ -135,7 +135,7 @@ def upload_lecture_task(payload: dict):
         text_path = Path(f"{lecture.id}.txt").resolve()
         with open(text_path, "w") as f:
             f.write(payload["data"])
-        
+
         lecture.audio_url = str(text_path)
         db.commit()
 
@@ -163,7 +163,7 @@ def track_task(task_id=None, task=None, sender=None, **kwargs):
 def run_audio_pipeline(task_id: str, user_uuid: uuid.UUID, audio_filepath: str):
     if not manager.contains(task_id):
         raise Exception(f"task_id {task_id} not found")
-    
+
     with SessionLocal() as db:
         db.query(User).filter()
 
@@ -188,7 +188,7 @@ def run_audio_pipeline(task_id: str, user_uuid: uuid.UUID, audio_filepath: str):
 def run_audio_pipeline_test(task_id: str, audio_filepath: str):
     if not manager.contains(task_id):
         raise Exception(f"task_id {task_id} not found")
-    
+
     user = User(
         id = uuid.uuid4(),
         username = str(uuid.uuid4()),

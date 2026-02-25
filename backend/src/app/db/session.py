@@ -1,8 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.app.config import POSTGRES_URL
+from src.app.config import settings
 
-engine = create_engine(POSTGRES_URL, pool_pre_ping=True)
+sync_url = settings.POSTGRES_URL.replace("postgresql+asyncpg://", "postgresql://")
+
+engine = create_engine(sync_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # зависимость для получения сессии

@@ -1,17 +1,27 @@
 import asyncio
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-
 from src.app.api.routers.auth import router as auth_router
+from src.app.api.routers.lectures import router as lecture_router
 from src.app.api.routers.tasks import router as tasks_router
 from src.app.api.routers.users import router as user_router
-from src.app.api.routers.lectures import router as lecture_router
 from src.app.api.schemas.status import Status
 from src.app.celery_app import ws_event_listener
+from src.app.config import settings
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print("[CONFIG CHECK] Проверка загруженных настроек:")
+
+    config_data = settings.model_dump()
+    for key, value in config_data.items():
+        print(f"  {key}: {value}")
+
+    print("------------------------------------------")
+
     listener_task = asyncio.create_task(ws_event_listener())
     print("✅ WebSocket event listener started")
     yield

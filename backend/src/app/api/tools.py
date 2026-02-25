@@ -1,10 +1,10 @@
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from src.app.api.schemas.user import UserRead
-from src.app.security import validate_token
-from src.app.db.session import get_db
 from src.app.db.models.user import User
+from src.app.db.session import get_db
+from src.app.security import validate_token
 
 security = HTTPBearer()
 
@@ -25,9 +25,9 @@ def token_get_user(
     db: Session = Depends(get_db)
 ) -> UserRead:
     payload = decode_token(token.credentials)
-    
+
     user = db.query(User).filter(User.id == payload["uuid"]).first()
     if user == None:
         raise HTTPException(status_code=401, detail="User not found")
-    
+
     return UserRead.model_validate(user)

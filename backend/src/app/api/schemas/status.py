@@ -1,6 +1,7 @@
 from enum import Enum
+
 from pydantic import BaseModel
-from typing import Optional
+
 
 class StatusType(str, Enum):
     SUCCESS = "success"
@@ -8,12 +9,12 @@ class StatusType(str, Enum):
 
 class Status(BaseModel):
     status: StatusType
-    msg: Optional[str] = None
-    
+    msg: str | None = None
+
     @classmethod
-    def success(cls, msg: Optional[str] = None) -> "Status":
+    def success(cls, msg: str | None = None) -> "Status":
         return cls(status=StatusType.SUCCESS, msg=msg)
-    
+
     @classmethod
-    def error(cls, msg: Optional[str] = None) -> "Status":
+    def error(cls, msg: str | None = None) -> "Status":
         return cls(status=StatusType.ERROR, msg=msg)

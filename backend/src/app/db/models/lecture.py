@@ -1,8 +1,11 @@
-from sqlalchemy import Column, ForeignKey, DateTime, func, Text, String
+import uuid
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-import uuid
+
 from ..base import Base
+
 
 class Lecture(Base):
     __tablename__ = "lectures"
@@ -13,5 +16,5 @@ class Lecture(Base):
     text = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     user = relationship("User", backref="lectures")

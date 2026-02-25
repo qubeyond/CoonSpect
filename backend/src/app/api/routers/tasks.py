@@ -1,13 +1,19 @@
-from fastapi import APIRouter, HTTPException
-from fastapi import WebSocket, WebSocketDisconnect, status
-from fastapi import UploadFile, File
-from uuid import UUID, uuid4
 import tempfile
-from src.app.api.schemas.status import Status
+from uuid import UUID, uuid4
 
-from src.app.wsmanager import manager
-from src.app.celery_app import run_audio_pipeline, run_audio_pipeline_test
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
+from src.app.api.schemas.status import Status
+from src.app.celery_app import run_audio_pipeline_test
 from src.app.db.redis import redis_sync as r
+from src.app.wsmanager import manager
 
 router = APIRouter(prefix="/task", tags=["tasks"])
 
@@ -29,7 +35,7 @@ async def check_task_id(task_id: UUID):
     if r.exists(f"task_status:{task_id}"):
         print(f"[TASK/correct] Correct task_id={task_id}")
         return Status.success()
-    
+
     print(f"[TASK/correct] Incorrect task_id={task_id}")
     raise HTTPException(status_code=400, detail="Incorrect task_id")
 
@@ -39,17 +45,17 @@ async def start(task_id: UUID, file: UploadFile = File(...)):
     Запустить задачу
     """
     print(f"[TASK/START] Task {task_id}, got file {file.filename}")
-    
+
     if not r.exists(f"task:{task_id}"):
         raise HTTPException(status_code=400, detail="Invalid task_id")
-    
+
     tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
             content = await file.read()
             tmp.write(content)
             tmp_path = tmp.name
-            
+
         print(f"[UPLOAD] Saved temp file {tmp_path} ({len(content)} bytes)")
 
         run_audio_pipeline_test(task_id, tmp_path)
@@ -78,7 +84,7 @@ async def websocket_endpoint(websocket: WebSocket, task_id: UUID):
 
     await manager.connect(websocket, task_id)
     await manager.send_message(task_id, r.get(f"task:{task_id}"))
-    
+
     try:
         while True:
             await websocket.receive_text()

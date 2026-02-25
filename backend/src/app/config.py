@@ -1,27 +1,53 @@
-import os
-from pydantic_settings import BaseSettings
+from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Redis configuration
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_URL = os.getenv('REDIS_URL', f'redis://{REDIS_HOST}:{REDIS_PORT}')
-
-# Database
-POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
-POSTGRES_USER = os.getenv('POSTGRES_USER', 'user')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'pwd1234')
-POSTGRES_DB = os.getenv('POSTGRES_DB', 'coonspect')
-POSTGRES_URL = os.getenv('POSTGRES_URL', f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}')
-
-# STT Service
-STT_SERVICE_URL = os.getenv('STT_SERVICE_URL', "http://stt-service:8000")
-LLM_SERVICE_URL = os.getenv('STT_SERVICE_URL', "http://llm-service:8000")
 
 class Settings(BaseSettings):
-    secret_key: str = "your-super-secret-key-change-in-prod"
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-    refresh_token_expire_days: int = 7
+    model_config = SettingsConfigDict(
+        extra="ignore",
+        case_sensitive=False
+    )
+
+    # Postgres
+
+    POSTGRES_USER: str = Field(...)
+    POSTGRES_PASSWORD: str = Field(...)
+    POSTGRES_DB: str = Field(...)
+    POSTGRES_HOST: str = Field(...)
+    POSTGRES_PORT: int = Field(...)
+
+    POSTGRES_URL: str = Field(default="", validate_default=False)
+
+    @model_validator(mode="after")
+    def postgres_url(self) -> "Settings":
+        self.POSTGRES_URL = (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
+            f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+        return self
+
+    # Redis
+
+    REDIS_HOST: str = Field(...)
+    REDIS_PORT: int = Field(6379)
+
+    REDIS_URL: str = Field(default="", validate_default=False)
+
+    @model_validator(mode="after")
+    def redis_url(self) -> "Settings":
+        self.REDIS_URL = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+        return self
+
+    # Services
+
+    STT_SERVICE_URL: str = Field(...)
+    LLM_SERVICE_URL: str = Field(...)
+
+    # Security
+
+    SECRET_KEY: str = Field("dev_secret", description="Key for JWT signing")
+    ALGORITHM: str = Field("HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(30)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(7)
 
 settings = Settings()

@@ -1,11 +1,10 @@
-import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from fastapi.testclient import TestClient
-import uuid
-from fastapi import WebSocketDisconnect
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+from fastapi import WebSocketDisconnect
+from fastapi.testclient import TestClient
 from src.app.main import app
+
 
 @pytest.fixture
 def client():
@@ -23,20 +22,20 @@ def mock_external_dependencies():
          patch('builtins.print') as mock_print, \
          patch('src.app.api.routers.tasks.manager.send_message') as mock_send_msg, \
          patch('src.app.api.routers.tasks.manager.disconnect') as mock_disconnect:
-        
+
         # Настраиваем мок Redis
         mock_redis.set = Mock()
         mock_redis.exists = Mock(return_value=True)
-        
+
         # Настраиваем мок менеджера WebSocket
         mock_manager.connect = AsyncMock()
         mock_manager.send_message = AsyncMock()
         mock_manager.disconnect = Mock()
-        
+
         # Настраиваем мок пайплайна (функция, а не метод с apply_async!)
         # Ваша функция вызывается как run_audio_pipeline_test(task_id, path)
         mock_pipeline.return_value = None  # Просто возвращает None
-        
+
         # Настраиваем мок временных файлов
         mock_tempfile_context = Mock()
         mock_tempfile_context.name = "/tmp/test_file.wav"
@@ -44,7 +43,7 @@ def mock_external_dependencies():
         mock_tempfile_context.__enter__ = Mock(return_value=mock_tempfile_context)
         mock_tempfile_context.__exit__ = Mock(return_value=None)
         mock_tempfile.return_value = mock_tempfile_context
-        
+
         yield {
             'redis': mock_redis,
             'manager': mock_manager,

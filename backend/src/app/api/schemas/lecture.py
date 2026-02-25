@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 
 class LectureBase(BaseModel):
     audio_url: str | None = None
