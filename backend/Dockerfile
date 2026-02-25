@@ -1,12 +1,16 @@
-FROM python:3.13.7
+FROM ghcr.io/astral-sh/uv:python3.13-alpine AS uv_base
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-ENV PYTHONPATH=/app/src
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    uv pip install --system --no-cache -r requirements.txt
 
 COPY . .
+
+ENV PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1
+
+RUN chmod +x ./start.sh
 
 CMD ["/bin/sh", "./start.sh"]
