@@ -1,5 +1,7 @@
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
-Base = declarative_base()
 
-from .models import *  # импрорт моделей для алембика
+class Base(DeclarativeBase):
+    pass
+
+from .models import *
