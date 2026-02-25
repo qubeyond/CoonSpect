@@ -65,32 +65,36 @@ services:
     build: ./stt-service/
     restart: always
     profiles: ["ml"]
+    ports:
+      - "${STT_PORT}:8000"
     deploy:
       resources:
         reservations:
           devices:
             - driver: ${GPU_DRIVER}
               count: ${GPU_COUNT}
-              capabilities: [${GPU_CAPABILITIES}]
+              capabilities: ["gpu"]
     environment:
       NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES}
-      LD_LIBRARY_PATH: ${CUDA_LIB_PATH}:$LD_LIBRARY_PATH
+      LD_LIBRARY_PATH: ${CUDA_LIB_PATH}
       PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
 
   llm-service:
     build: ./llm-service/
     restart: always
     profiles: ["ml"]
+    ports:
+      - "${LLM_PORT}:8000"
     deploy:
       resources:
         reservations:
           devices:
             - driver: ${GPU_DRIVER}
               count: ${GPU_COUNT}
-              capabilities: [${GPU_CAPABILITIES}]
+              capabilities: ["gpu"]
     environment:
       NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES}
-      LD_LIBRARY_PATH: ${CUDA_LIB_PATH}:$LD_LIBRARY_PATH
+      LD_LIBRARY_PATH: ${CUDA_LIB_PATH}
       PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
     volumes:
       - ollama_models:/root/.ollama
@@ -99,16 +103,28 @@ services:
 
   stt-mock:
     build: ./mocks/stt
+    profiles: ["mock"]
     ports:
-      - "${STT_MOCK_PORT}:8000"
+      - "${STT_PORT}:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      default:
+        aliases:
+          - stt-service
 
   llm-mock:
     build: ./mocks/llm
+    profiles: ["mock"]
     ports:
-      - "${LLM_MOCK_PORT}:8000"
+      - "${LLM_PORT}:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      default:
+        aliases:
+          - llm-service
 
-  # Other
-
-  volumes:
-    postgres_data:
-    ollama_models:
+volumes:
+  postgres_data:
+  ollama_models:
