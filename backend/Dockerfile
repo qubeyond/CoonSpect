@@ -1,16 +1,23 @@
-FROM ghcr.io/astral-sh/uv:python3.13-alpine AS uv_base
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS uv_base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    make \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    uv pip install --system --no-cache -r requirements.txt
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY pyproject.toml uv.lock ./
+
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY . .
 
+RUN uv sync --frozen --no-dev
+
 ENV PYTHONPATH=/app/src
-ENV PYTHONUNBUFFERED=1
 
-RUN chmod +x ./start.sh
-
-CMD ["/bin/sh", "./start.sh"]
+CMD ["make", "up"]

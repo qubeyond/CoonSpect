@@ -19,16 +19,17 @@ class Settings(BaseSettings):
     POSTGRES_POOL_SIZE: int = Field(5)
     POSTGRES_MAX_OVERFLOW: int = Field(10)
 
-    POSTGRES_URL: str = ""
-    POSTGRES_SYNC_URL: str = ""
-
     POSTGRES_URL: str = Field(default="", validate_default=False)
+    POSTGRES_SYNC_URL: str = Field(default="", validate_default=False)
 
     @model_validator(mode="after")
     def postgres_url(self) -> "Settings":
-        base = f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        base = (
+            f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
+            f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
         self.POSTGRES_URL = f"postgresql+asyncpg://{base}"
-        self.POSTGRES_SYNC_URL = f"postgresql://{base}"
+        self.POSTGRES_SYNC_URL = f"postgresql+psycopg://{base}"
         return self
 
     # Redis

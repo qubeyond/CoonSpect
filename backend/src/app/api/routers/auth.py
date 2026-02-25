@@ -37,7 +37,7 @@ async def register(content: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=Token)
 async def login(content: UserCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == content.username).first()
-    if user == None:
+    if user is None:
         raise HTTPException(status_code=401, detail="Invalid username")
 
     if not verify_password(content.password, user.password_hash):

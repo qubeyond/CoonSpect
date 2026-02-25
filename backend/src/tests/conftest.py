@@ -17,7 +17,7 @@ def mock_external_dependencies():
     with patch('src.app.api.routers.tasks.r') as mock_redis, \
          patch('src.app.api.routers.tasks.manager') as mock_manager, \
          patch('src.app.api.routers.tasks.run_audio_pipeline_test') as mock_pipeline, \
-         patch('src.app.api.routers.tasks.run_audio_pipeline') as mock_pipeline_real, \
+         patch('src.app.api.routers.tasks.run_audio_pipeline'), \
          patch('tempfile.NamedTemporaryFile') as mock_tempfile, \
          patch('builtins.print') as mock_print, \
          patch('src.app.api.routers.tasks.manager.send_message') as mock_send_msg, \

@@ -27,7 +27,7 @@ def token_get_user(
     payload = decode_token(token.credentials)
 
     user = db.query(User).filter(User.id == payload["uuid"]).first()
-    if user == None:
+    if user is None:
         raise HTTPException(status_code=401, detail="User not found")
 
     return UserRead.model_validate(user)

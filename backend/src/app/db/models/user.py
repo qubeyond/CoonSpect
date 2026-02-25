@@ -1,7 +1,9 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import Column, String
+from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..base import Base
 
@@ -9,6 +11,54 @@ from ..base import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    username = Column(String, unique=True, nullable=False)
-    password_hash = Column(String, nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=func.gen_random_uuid()
+    )
+
+    username: Mapped[str] = mapped_column(
+        String(50),
+        unique=True
+    )
+
+    email: Mapped[str] = mapped_column(
+        String(100),
+        unique=True
+    )
+
+    password_hash: Mapped[str] = mapped_column(
+        String(255)
+    )
+
+    # Статусы
+
+    is_active: Mapped[bool] = mapped_column(
+        default=False
+    )
+
+    is_superuser: Mapped[bool] = mapped_column(
+        default=False
+    )
+
+    # Таймстампы
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
+    )
+
+    # Связи
+
+    lectures: Mapped[list["Lecture"]] = relationship(
+        back_populates="owner"
+    )
+
+    def __repr__(self) -> str:
+        return f"User(id={self.id!r}, username={self.username!r})"

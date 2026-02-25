@@ -50,13 +50,13 @@ def validate_token(token: str) -> dict[str, Any]:
     if payload.get("type") != "access" and payload.get("type") != "refresh":
         raise Exception("Invalid token type")
 
-    elif payload.get("exp") == None:
+    elif payload.get("exp") is None:
         raise Exception("Invalid token type")
 
     elif payload.get("exp") - datetime.now(timezone.utc).timestamp() < 0:
         raise Exception("Token expired")
 
-    elif payload.get("uuid") == None:
+    elif payload.get("uuid") is None:
         raise Exception("Invalid token payload")
 
     try:

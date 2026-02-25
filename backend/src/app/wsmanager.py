@@ -14,7 +14,7 @@ class ConnectionManager:
             del self.active_connections[task_id]
 
     def contains(self, task_id: str) -> bool:
-        return self.active_connections.get(task_id) != None
+        return self.active_connections.get(task_id) is not None
 
     async def send_message(self, task_id: str, message: str):
         if task_id in self.active_connections:
