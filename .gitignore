@@ -1,0 +1,22 @@
+# Python
+
+__pycache__/
+.venv/
+
+# Env
+
+.env
+.env.local
+.env.dev
+.env.prod
+!.env.example
+
+# IDE
+
+.vscode/
+.idea/
+
+# OS
+
+.DS_Store
+Thumbs.db
