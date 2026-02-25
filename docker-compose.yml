@@ -1,131 +1,114 @@
 services:
-  db:
-    image: postgres:15
-    container_name: coonspect-postgres
+
+  # DBs
+
+  postgres:
+    image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pwd1234
-      - POSTGRES_DB=coonspect
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d coonspect"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - coonspect-net
 
   redis:
-    image: redis:8.2.2
-    container_name: coonspect-redis
+    image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - coonspect-net
 
-  # stt-mock:
-  #   build: ./mock-stt/
-  #   container_name: coonspect-stt-mock
-  #   ports:
-  #     - "8002:8000"
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  #   networks:
-  #     - coonspect-net
-  
-  llm-service:
-    build: ./llm-service/
-    container_name: coonspect-llm
-    ports:
-      - "8003:8000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - PYTHONUNBUFFERED=1
-      - LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/nvidia/cudnn/lib/:$LD_LIBRARY_PATH
-    volumes:
-      - ollama_models:/root/.ollama
-    networks:
-      - coonspect-net
+  # Services
 
   backend:
     build: ./backend/
-    container_name: coonspect-backend
-    ports:
-      - "8000:8000"
+    restart: always
     environment:
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pwd1234
-      - POSTGRES_DB=coonspect
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      REDIS_HOST: ${REDIS_HOST}
+      STT_SERVICE_URL: ${STT_SERVICE_URL}
+      LLM_SERVICE_URL: ${LLM_SERVICE_URL}
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
+    ports:
+      - "${BACKEND_PORT}:8000"
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
       - ./backend:/app
-    networks:
-      - coonspect-net
+  
+  frontend:
+    build: ./frontend/
+    restart: always
+    ports:
+      - "${FRONTEND_PORT}:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
+    depends_on:
+      - backend
 
   stt-service:
     build: ./stt-service/
-    container_name: coonspect-stt
-    ports:
-      - "8001:8000"
+    restart: always
+    profiles: ["ml"]
     deploy:
       resources:
         reservations:
           devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+            - driver: ${GPU_DRIVER}
+              count: ${GPU_COUNT}
+              capabilities: [${GPU_CAPABILITIES}]
     environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - PYTHONUNBUFFERED=1
-      - LD_LIBRARY_PATH=/usr/local/lib/python3.10/dist-packages/nvidia/cudnn/lib/:$LD_LIBRARY_PATH
-    networks:
-      - coonspect-net
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES}
+      LD_LIBRARY_PATH: ${CUDA_LIB_PATH}:$LD_LIBRARY_PATH
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
 
-  frontend:
-    build: ./frontend/
-    container_name: coonspect-frontend
+  llm-service:
+    build: ./llm-service/
+    restart: always
+    profiles: ["ml"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: ${GPU_DRIVER}
+              count: ${GPU_COUNT}
+              capabilities: [${GPU_CAPABILITIES}]
+    environment:
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES}
+      LD_LIBRARY_PATH: ${CUDA_LIB_PATH}:$LD_LIBRARY_PATH
+      PYTHONUNBUFFERED: ${PYTHONUNBUFFERED}
+    volumes:
+      - ollama_models:/root/.ollama
+
+  # Mocks
+
+  stt-mock:
+    build: ./mocks/stt
     ports:
-      - "3000:80" 
-    environment:
-      - VITE_API_URL=http://backend:8000
-      - VITE_API_BASE_URL=http://localhost:3000
-      - VITE_WS_BASE_URL=ws://backend:3000
-    depends_on:
-      - backend
-    networks:
-      - coonspect-net
+      - "${STT_MOCK_PORT}:8000"
 
-networks:
-  coonspect-net:
-    driver: bridge
+  llm-mock:
+    build: ./mocks/llm
+    ports:
+      - "${LLM_MOCK_PORT}:8000"
 
-volumes:
-  postgres_data:
-  ollama_models:
+  # Other
+
+  volumes:
+    postgres_data:
+    ollama_models:
